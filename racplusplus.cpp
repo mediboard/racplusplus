@@ -10,13 +10,16 @@ PYBIND11_MODULE(racplusplus, handle){
         2023
     )doc"
 
-    m.def("RAC", &RAC, R"fdoc(
+    m.def("rac", &RAC, R"fdoc(
         Run RAC algorithm on a provided array of points.
 
         Returns an array of the group # each point was assigned to.
     )fdoc");
 
-    m.def()
+    m.def("test_rac", &main, R"fdoc(
+        Testing function to run and time RAC's run in C++.
+    )fdoc");
+    
     m.attr("__version__") = "0.9";
 }
 
