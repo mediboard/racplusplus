@@ -1,3 +1,10 @@
+#include <array>
+#include <tuple>
+#include <unordered_map>
+#include <set>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+
 #ifndef GLOBAL_TIMING_VARS_H
 #define GLOBAL_TIMING_VARS_H
 

@@ -15,68 +15,60 @@
 #include <random>
 
 //---------------------Classes------------------------------------
-class Cluster {
-public:
-    int id;
-    bool will_merge;
-    int nn;
-    std::vector<int> neighbors;
-    std::vector<int> indices;
-    std::unordered_map<int, float> dissimilarities;
-    std::vector<std::tuple<int, int, double> > neighbors_needing_updates;
-
-    Cluster(int id)
-        : id(id), will_merge(false) {
-            std::vector<int> indices;
-            indices.push_back(id);
-            this->indices = indices;
-
-            this->nn = -1;
-        }
 
 
-    void update_nn(float min_distance) {
-        if (neighbors.size() == 0) {
-            nn = -1;
-            return;
-        }
+Cluster::Cluster(int id)
+    : id(id), will_merge(false) {
+        std::vector<int> indices;
+        indices.push_back(id);
+        this->indices = indices;
 
-        float min = 1;
-        int nn = -1;
-        for (int neighbor : this->neighbors) {
-            float dissimilarity = this->dissimilarities[neighbor];
-            if (dissimilarity < min) {
-                min = dissimilarity;
-                nn = neighbor;
-            }
-        }
+        this->nn = -1;
+    }
 
-        if (min <= min_distance) {
-            this->nn = nn;
-        } else {
-            this->nn = -1;
+
+void Cluster::update_nn(float min_distance) {
+    if (neighbors.size() == 0) {
+        nn = -1;
+        return;
+    }
+
+    float min = 1;
+    int nn = -1;
+    for (int neighbor : this->neighbors) {
+        float dissimilarity = this->dissimilarities[neighbor];
+        if (dissimilarity < min) {
+            min = dissimilarity;
+            nn = neighbor;
         }
     }
 
-    void update_nn(Eigen::MatrixXd& distance_arr) {
-        if (neighbors.size() == 0) {
-            nn = -1;
-            return;
-        }
-
-        double min = 1;
-        int nn = -1;
-        for (int neighbor : this->neighbors) {
-            float dissimilarity = distance_arr(this->id, neighbor);
-            if (dissimilarity < min) {
-                min = dissimilarity;
-                nn = neighbor;
-            }
-        }
-
+    if (min <= min_distance) {
         this->nn = nn;
+    } else {
+        this->nn = -1;
     }
-};
+}
+
+void Cluster::update_nn(Eigen::MatrixXd& distance_arr) {
+    if (neighbors.size() == 0) {
+        nn = -1;
+        return;
+    }
+
+    double min = 1;
+    int nn = -1;
+    for (int neighbor : this->neighbors) {
+        float dissimilarity = distance_arr(this->id, neighbor);
+        if (dissimilarity < min) {
+            min = dissimilarity;
+            nn = neighbor;
+        }
+    }
+
+    this->nn = nn;
+}
+
 //---------------------End Classes------------------------------------
 
 
