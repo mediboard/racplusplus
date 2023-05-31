@@ -1,0 +1,7 @@
+Metadata-Version: 2.1
+Name: racplusplus
+Version: 0.9
+Summary: Reciprocal Agglomerative Clustering implementation in C++ wrapped in Python using PyBind11.
+Author: Porter Hunley, Daniel Frees
+Author-email: dfrees@stanford.edu
+Requires-Python: >=3.7

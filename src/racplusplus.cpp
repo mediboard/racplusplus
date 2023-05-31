@@ -1,3 +1,4 @@
+#include <pybind11/pybind11.h>
 #include "racplusplus.h"
 #include <array>
 #include <tuple>
@@ -10,9 +11,110 @@
 #include <thread>
 #include <algorithm>
 // #define EIGEN_DONT_PARALLELIZE
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include "Eigen/Dense"
+#include "Eigen/Sparse"
 #include <random>
+
+
+//--------pybind--------------
+
+//----main
+int main() {
+    std::cout<<"Starting Randomized RAC Test";
+    // 5000 - 1061
+    Eigen::MatrixXd test = generateRandomMatrix(NO_POINTS, 768, 10);
+
+    // Shift and scale the values to the range 0-1
+    test = (test + Eigen::MatrixXd::Constant(NO_POINTS, 768, 1.)) / 2.;
+
+    // std::cout << test << std::endl;
+
+    // Eigen::SparseMatrix<bool> connectivity(NO_POINTS, NO_POINTS);
+    // for (int i=0; i<NO_POINTS; i++) {
+    //     for (int j=0; j<NO_POINTS; j++) {
+    //         connectivity.insert(i, j) = true;
+    //     }
+    // }
+    Eigen::SparseMatrix<bool> connectivity;
+
+    std::cout << "Actually running RAC now." << std::endl;
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<int> labels = RAC(test, MIN_DISTANCE, 1000, connectivity);
+    auto stop = std::chrono::high_resolution_clock::now();
+    std::cout << "RAC Finished!" < <std::endl;
+
+    // Compute the duration
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+    // Output duration
+    std::cout << duration.count() << std::endl;
+
+    // Output neighbor update durations
+    std::cout << std::accumulate(UPDATE_NEIGHBOR_DURATIONS.begin(), UPDATE_NEIGHBOR_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // Output NN update durations
+    std::cout << std::accumulate(UPDATE_NN_DURATIONS.begin(), UPDATE_NN_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // Output indices durations
+    std::cout << std::accumulate(INDICES_DURATIONS.begin(), INDICES_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // Output merge durations
+    std::cout << std::accumulate(MERGE_DURATIONS.begin(), MERGE_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // Output misc merge durations
+    std::cout << std::accumulate(MISC_MERGE_DURATIONS.begin(), MISC_MERGE_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // Output number of clusters
+    std::set<int> unique_labels(labels.begin(), labels.end());
+    std::cout << unique_labels.size() << std::endl;
+
+    // Output number of cosine calls
+    // std::cout << NO_COSINE_CALLS << std::endl;
+
+    // Output max cosine duration
+    // std::cout << std::max_element(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end())[0] << std::endl;
+
+    // // Output total cosine duration
+    // std::cout << std::accumulate(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end(), 0.0) / 1000 << std::endl;
+
+    // // Output average cosine duration
+    // std::cout << std::accumulate(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end(), 0.0) / COSINE_DURATIONS.size() << std::endl;
+    return 0;
+}
+
+void stupid_pybind_test() {
+    std::cout<<"this is a pybind test." << std::endl;
+
+}
+
+PYBIND11_MODULE(racplusplus, m){
+    m.doc() = R"doc( 
+        RACplusplus is a C++ optimized python package for performing
+        reciprocal agglomerative clustering.
+
+        Authors: Porter Hunley, Daniel Frees
+        2023
+    )doc";
+
+    m.def("rac", &RAC, R"fdoc(
+        Run RAC algorithm on a provided array of points.
+
+        Returns an array of the group # each point was assigned to.
+    )fdoc");
+
+    m.def("test_rac", &main, R"fdoc(
+        Testing function to run and time RAC's run in C++.
+    )fdoc");
+
+    m.def("stupid_pybind_test", &stupid_pybind_test, R"fdoc(
+        Simple test function to see if pybind works.
+    )fdoc");
+
+    m.attr("__version__") = "0.9";
+}
+
+
+//-----------------------------
 
 //---------------------Classes------------------------------------
 
@@ -823,63 +925,3 @@ std::vector<int> RAC(
     return cluster_labels;
 }
 //--------------------------------------End RAC Functions--------------------------------------
-
-//----main
-int main() {
-    // 5000 - 1061
-    Eigen::MatrixXd test = generateRandomMatrix(NO_POINTS, 768, 10);
-
-    // Shift and scale the values to the range 0-1
-    test = (test + Eigen::MatrixXd::Constant(NO_POINTS, 768, 1.)) / 2.;
-
-    // std::cout << test << std::endl;
-
-    // Eigen::SparseMatrix<bool> connectivity(NO_POINTS, NO_POINTS);
-    // for (int i=0; i<NO_POINTS; i++) {
-    //     for (int j=0; j<NO_POINTS; j++) {
-    //         connectivity.insert(i, j) = true;
-    //     }
-    // }
-    Eigen::SparseMatrix<bool> connectivity;
-
-    auto start = std::chrono::high_resolution_clock::now();
-    std::vector<int> labels = RAC(test, MIN_DISTANCE, 1000, connectivity);
-    auto stop = std::chrono::high_resolution_clock::now();
-
-    // Compute the duration
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-    // Output duration
-    std::cout << duration.count() << std::endl;
-
-    // Output neighbor update durations
-    std::cout << std::accumulate(UPDATE_NEIGHBOR_DURATIONS.begin(), UPDATE_NEIGHBOR_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // Output NN update durations
-    std::cout << std::accumulate(UPDATE_NN_DURATIONS.begin(), UPDATE_NN_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // Output indices durations
-    std::cout << std::accumulate(INDICES_DURATIONS.begin(), INDICES_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // Output merge durations
-    std::cout << std::accumulate(MERGE_DURATIONS.begin(), MERGE_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // Output misc merge durations
-    std::cout << std::accumulate(MISC_MERGE_DURATIONS.begin(), MISC_MERGE_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // Output number of clusters
-    std::set<int> unique_labels(labels.begin(), labels.end());
-    std::cout << unique_labels.size() << std::endl;
-
-    // Output number of cosine calls
-    // std::cout << NO_COSINE_CALLS << std::endl;
-
-    // Output max cosine duration
-    // std::cout << std::max_element(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end())[0] << std::endl;
-
-    // // Output total cosine duration
-    // std::cout << std::accumulate(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end(), 0.0) / 1000 << std::endl;
-
-    // // Output average cosine duration
-    // std::cout << std::accumulate(COSINE_DURATIONS.begin(), COSINE_DURATIONS.end(), 0.0) / COSINE_DURATIONS.size() << std::endl;
-}
