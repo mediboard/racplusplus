@@ -1,7 +1,0 @@
-setup.py
-racplusplus.egg-info/PKG-INFO
-racplusplus.egg-info/SOURCES.txt
-racplusplus.egg-info/dependency_links.txt
-racplusplus.egg-info/not-zip-safe
-racplusplus.egg-info/requires.txt
-racplusplus.egg-info/top_level.txt
