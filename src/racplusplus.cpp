@@ -41,7 +41,7 @@ int main() {
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<int> labels = RAC(test, MIN_DISTANCE, 1000, connectivity);
     auto stop = std::chrono::high_resolution_clock::now();
-    std::cout << "RAC Finished!" < <std::endl;
+    std::cout << "RAC Finished!" << std::endl;
 
     // Compute the duration
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
