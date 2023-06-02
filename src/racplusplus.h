@@ -26,7 +26,7 @@ std::vector<long> MISC_MERGE_DURATIONS;
 const double MIN_DISTANCE = .035;
 const int NO_POINTS = 10000;
 int NO_COSINE_CALLS = 0;
-const int NO_CORES = 1;
+const int NO_CORES = 8;
 
 #endif // GLOBAL_CONSTANTS_H
 

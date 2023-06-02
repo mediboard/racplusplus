@@ -7,6 +7,9 @@ from pathlib import Path
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
+#necessary to build correct macos target
+os.environ["ARCHFLAGS"] = "-arch x86_64 -mmacosx-version-min=13.0"
+
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
     "win32": "Win32",
@@ -14,7 +17,6 @@ PLAT_TO_CMAKE = {
     "win-arm32": "ARM",
     "win-arm64": "ARM64",
 }
-
 
 # A CMakeExtension needs a sourcedir instead of a file list.
 # The name must be the _single_ output extension from the CMake build.
@@ -135,7 +137,9 @@ setup(
     ext_modules=[CMakeExtension("racplusplus")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
-    extras_require={},
+    extras_require={
+        'test': ['pytest']
+    },
     install_requires=[
         'pybind11'
     ],
