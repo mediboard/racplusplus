@@ -354,8 +354,7 @@ void calculate_initial_dissimilarities(
 
             int distanceVecSize = static_cast<int>(distance_vec.size());
             for (int j = 0; j < distanceVecSize; ++j) {
-                // if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
-                if (j != cluster->id) {
+                if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
                     dissimilarities[j] = distance_vec[j];
                     neighbors.push_back(j);
                 }
