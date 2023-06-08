@@ -4,6 +4,8 @@
 
 `1.` Make a new conda environment for racplusplus.
 
+<br />
+
 *On the env:*
 
 `2.` Install necessary packages (numpy, pandas, pybind11, jupyter, scipy,  etc. lmk if you’d like my full “conda list” or a yaml for my condo environment)
@@ -13,6 +15,8 @@
 `4.` Make sure ipykernel is updated to 3.11 as well if you want to work out of a notebook:
 python3.11 -m pip install ipykernel
 python3.11 -m ipykernel install --user --name=python311
+
+<br />
 
 *On your filesystem:*
 
@@ -25,17 +29,18 @@ python3.11 -m ipykernel install --user --name=python311
 - Location for pybind11 for me: “/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/site-packages/pybind11”
 - Location for Eigen for me: “/usr/local/include/eigen3/Eigen”
 
+<br />
+
 *Building the package and executable:*
 
 `8.` Update the 4 vars at the top of the CMake:
 
-- set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
-
-- set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
-
-- set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
-
-- set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
+```cmake
+set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
+set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
+set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
+set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
+```
 
 `9.` mkdir build
 
@@ -54,6 +59,7 @@ python3.11 -m ipykernel install --user --name=python311
 > `python -m ipykernel install --user --name python3.11 --display-name "Python 3.11”`
 
 `14.` Import racplusplus and have fun!
+
 `15.` See "test/test_wrapper.py" for example usage. Example output running my python testing script:
 
 ```bash
@@ -104,8 +110,11 @@ Numpy & Scipy <> RAC Interface w/o Conn Matrix test complete.
 Python Script racplusplus package test complete!
 ```
 
+<br />
+
 *For development:* After the initial setup all you’ll need to do if you edit the C++ package is save edits and repeat steps 11-14 to see your changes reflected.
 
+<br />
 
 *Additional notes:*
 
