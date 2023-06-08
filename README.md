@@ -1,4 +1,5 @@
-**racplusplus: C++ optimized python package for agglomerative clustering**
+# racplusplus
+## C++ optimized python package for agglomerative clustering 
 
 <br />
 <br />
