@@ -30,7 +30,7 @@ python3.11 -m ipykernel install --user --name=python311
 
 `6.` Clone into my GitHub repo https://github.com/mediboard/racplusplus 
 
-`7.` Change your symbolic links in this folder via `ln`.	
+`7.` Add symbolic links to `pybind11` and `Eigen` in the `racplusplus/src/` durectory via `ln`.	
 
 - Location for pybind11 for me: “/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/site-packages/pybind11”
 - Location for Eigen for me: “/usr/local/include/eigen3/Eigen”
