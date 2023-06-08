@@ -35,7 +35,7 @@ public:
     
     Cluster(int id);
 
-    void update_nn(float min_distance);
+    void update_nn(float max_merge_distance);
     void update_nn(Eigen::MatrixXd& distance_arr);
 };
 
@@ -73,7 +73,7 @@ void update_cluster_dissimilarities(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    float min_distance,
+    float max_merge_distance,
     std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor,
     std::vector<std::vector<int>>& merging_arrays,
     const int NO_PROCESSORS);
@@ -81,13 +81,13 @@ void update_cluster_dissimilarities(
 Eigen::MatrixXd calculate_initial_dissimilarities(
     Eigen::MatrixXd& base_arr,
     std::vector<Cluster*>& clusters,
-    float min_distance);
+    float max_merge_distance);
 
 void calculate_initial_dissimilarities(
     Eigen::MatrixXd& base_arr,
     std::vector<Cluster*>& clusters,
-    int batchSize,
-    float min_distance,
+    int batch_size,
+    float max_merge_distance,
     Eigen::SparseMatrix<bool>& connectivity);
 
 //-----------------------End Distance Calculations-------------------------
@@ -98,7 +98,7 @@ void merge_cluster_apx(
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& distance_arr,
-    float min_distance);
+    float max_merge_distance);
 
 void merge_cluster_apx(
     std::pair<int, int>& merge,
@@ -115,7 +115,7 @@ void merge_clusters_dist(
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& distance_arr,
-    float min_distance);
+    float max_merge_distance);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges, 
@@ -128,7 +128,7 @@ void parallel_merge_clusters(
     Eigen::MatrixXd& distance_arr,
     std::vector<Cluster*>& clusters,
     size_t no_threads,
-    float min_distance,
+    float max_merge_distance,
     std::vector<std::vector<int>>& merging_arrays);
 //-----------------------End Merging Functions-----------------------------------
 
@@ -143,7 +143,7 @@ void update_cluster_neighbors(
     std::pair<int, std::vector<std::pair<int, double> > >& update_chunk,
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    float min_distance,
+    float max_merge_distance,
     std::vector<int>& update_neighbors);
 
 void update_cluster_neighbors_p(
@@ -168,18 +168,24 @@ std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clus
 //--------------------------------------RAC Functions--------------------------------------
 void RAC_i(
     std::vector<Cluster*>& clusters, 
-    float min_distance, 
+    float max_merge_distance, 
     Eigen::MatrixXd& distance_arr, 
     std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor,
     std::vector<std::vector<int>>& merging_arrays,
     const int NO_PROCESSORS);
 
 std::vector<int> RAC(
+    Eigen::MatrixXd& base_arr,
+    float max_merge_distance,
+    Eigen::SparseMatrix<bool>& connectivity,
+    int batch_size,
+    int no_processors);
+
+py::array RAC_py(
     Eigen::MatrixXd base_arr,
-    float min_distance,
-    int batchSize,
+    float max_merge_distance,
     Eigen::SparseMatrix<bool> connectivity,
-    int no_processors,
-    const int NO_POINTS);
+    int batch_size,
+    int no_processors);
 //--------------------------------------End RAC Functions--------------------------------------
 
