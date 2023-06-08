@@ -1,3 +1,8 @@
+**racplusplus: C++ optimized python package for agglomerative clustering**
+
+<br />
+<br />
+
 **Guide: Building the wrapper package.**
 
 *Prereqs: C++, llvm clang++, openmp, llvm lld linker, macOS 13 (13.4)*
