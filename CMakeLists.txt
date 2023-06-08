@@ -30,6 +30,8 @@ set(CMAKE_OSX_SYSROOT ${MACOS_SDK})
 include_directories(${PYTHON311_INCLUDE_DIRS})
 # Use the pybind11_INCLUDE_DIRS variable to access the include directories
 include_directories(${pybind11_INCLUDE_DIRS})
+#include eigen directories
+include_directories( ${EIGEN3_INCLUDE_DIRS} )
 #------------------------------------------------------------------------------------
 
 #------------------------------------Make Executable----------------------------------
@@ -37,7 +39,6 @@ add_executable(racplusplus_exe src/racplusplus.cpp)
 target_link_libraries(racplusplus_exe 
     c++ 
     c++abi 
-    omp
 )
 #--------------------------------------------------------------------------------------
 
@@ -47,7 +48,6 @@ target_link_libraries(racplusplus PRIVATE
     -L${PYTHON311_LIBRARIES}
     c++
     c++abi
-    omp
     ${pybind11_LIBRARIES}
 )
 #----------------------------------------------------------------------------------------

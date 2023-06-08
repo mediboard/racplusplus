@@ -16,14 +16,12 @@
 #include "Eigen/Sparse"
 #include <random>
 
+
 //get number of processors
 size_t getProcessorCount() {
     const auto NO_PROCESSORS = std::thread::hardware_concurrency();
     return NO_PROCESSORS != 0 ? static_cast<size_t>(NO_PROCESSORS) : static_cast<size_t>(8);
 }
-
-//--------pybind--------------
-
 
 //----main
 int main() {
@@ -100,40 +98,6 @@ int main() {
     return 0;
 }
 
-void stupid_pybind_test() {
-    std::cout<<"this is a pybind test." << std::endl;
-
-}
-
-PYBIND11_MODULE(racplusplus, m){
-    m.doc() = R"doc( 
-        RACplusplus is a C++ optimized python package for performing
-        reciprocal agglomerative clustering.
-
-        Authors: Porter Hunley, Daniel Frees
-        2023
-    )doc";
-
-    m.def("rac", &RAC, R"fdoc(
-        Run RAC algorithm on a provided array of points.
-
-        Returns an array of the group # each point was assigned to.
-    )fdoc");
-
-    m.def("test_rac", &main, R"fdoc(
-        Testing function to run and time RAC's run in C++.
-    )fdoc");
-
-    m.def("stupid_pybind_test", &stupid_pybind_test, R"fdoc(
-        Simple test function to see if pybind works.
-    )fdoc");
-
-    m.attr("__version__") = "0.9";
-}
-
-
-//-----------------------------
-
 //---------------------Classes------------------------------------
 
 
@@ -200,8 +164,11 @@ Eigen::MatrixXd generateRandomMatrix(int rows, int cols, int seed) {
     std::uniform_real_distribution<double> distribution(0.0,1.0);
 
     Eigen::MatrixXd mat(rows, cols);
-    for(int i=0; i<mat.rows(); ++i) {
-        for(int j=0; j<mat.cols(); ++j) {
+
+    int numRows = mat.rows();
+    int numCols = mat.cols();
+    for(int i=0; i<numRows; ++i) {
+        for(int j=0; j<numCols; ++j) {
             mat(i, j) = distribution(generator);
         }
     }
@@ -310,9 +277,11 @@ void update_cluster_dissimilarities(
 
         clusters[main]->indices.insert(clusters[main]->indices.end(), clusters[secondary]->indices.begin(), clusters[secondary]->indices.end());
 
-        for (size_t i=0; i < clusters[main]->neighbors_needing_updates.size(); i++) {
-            int neighbor_idx = std::get<1>(clusters[main]->neighbors_needing_updates[i]);
-            double dissimilarity = std::get<2>(clusters[main]->neighbors_needing_updates[i]);
+        size_t numNeighborsNeedingUpdates = static_cast<size_t>(clusters[main]->neighbors_needing_updates.size());
+        for (size_t i=0; i < numNeighborsNeedingUpdates; i++) {
+            auto neighborNeedingUpdate = clusters[main]->neighbors_needing_updates[i];
+            int neighbor_idx = std::get<1>(neighborNeedingUpdate);
+            double dissimilarity = std::get<2>(neighborNeedingUpdate);
 
             sort_neighbor[neighbor_idx].first = neighbor_idx;
             sort_neighbor[neighbor_idx].second.push_back(std::make_pair(main, dissimilarity));
@@ -333,11 +302,14 @@ Eigen::MatrixXd calculate_initial_dissimilarities(
     float min_distance) {
     Eigen::MatrixXd distance_mat = pairwise_cosine(base_arr, base_arr).array();
 
-    for (size_t i=0; i<clusters.size(); i++) {
+    size_t clusterSize = clusters.size();
+    for (size_t i=0; i<clusterSize; i++) {
         double min = 2;
         int nn = -1;
 
-        for (size_t j=0; j<clusters.size(); j++) {
+        auto currentCluster = clusters[i];
+
+        for (size_t j=0; j<clusterSize; j++) {
             if (i == j) {
                 distance_mat(i, j) = 2;
                 continue;
@@ -345,7 +317,7 @@ Eigen::MatrixXd calculate_initial_dissimilarities(
 
             double distance = distance_mat(i, j);
             if (distance <= min_distance) {
-                clusters[i]->neighbors.push_back(j);
+                currentCluster->neighbors.push_back(j);
 
                 if (distance < min) {
                     min = distance;
@@ -354,7 +326,7 @@ Eigen::MatrixXd calculate_initial_dissimilarities(
             }
         }
 
-        clusters[i] -> nn = nn;
+        currentCluster -> nn = nn;
     }
 
     return distance_mat;
@@ -367,8 +339,9 @@ void calculate_initial_dissimilarities(
     float min_distance,
     Eigen::SparseMatrix<bool>& connectivity) {
 
-    for (int batchStart = 0; batchStart < clusters.size(); batchStart += batchSize) {
-        int batchEnd = std::min(batchStart + batchSize, static_cast<int>(clusters.size()));
+    int clustersSize = static_cast<int>(clusters.size());
+    for (int batchStart = 0; batchStart < clustersSize; batchStart += batchSize) {
+        int batchEnd = std::min(batchStart + batchSize, clustersSize);
         Eigen::MatrixXd batch = base_arr.block(0, clusters[batchStart]->indices[0], base_arr.rows(), clusters[batchEnd - 1]->indices[0] - clusters[batchStart]->indices[0] + 1);
 
         Eigen::MatrixXd distance_mat = pairwise_cosine(base_arr, batch).array();
@@ -378,7 +351,9 @@ void calculate_initial_dissimilarities(
 
             std::vector<int> neighbors;
             std::unordered_map<int, float> dissimilarities;
-            for (int j = 0; j < static_cast<int>(distance_vec.size()); ++j) {
+
+            int distanceVecSize = static_cast<int>(distance_vec.size());
+            for (int j = 0; j < distanceVecSize; ++j) {
                 // if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
                 if (j != cluster->id) {
                     dissimilarities[j] = distance_vec[j];
@@ -390,9 +365,11 @@ void calculate_initial_dissimilarities(
             cluster->dissimilarities = dissimilarities;
 
             distance_vec[cluster->id] = std::numeric_limits<float>::max(); // Masking
-            auto min_position = std::min_element(distance_vec.data(), distance_vec.data() + distance_vec.size());
 
-            int nearest_neighbor = std::distance(distance_vec.data(), min_position);
+            auto distanceVecData = distance_vec.data();
+            auto min_position = std::min_element(distanceVecData, distanceVecData + distanceVecSize);
+
+            int nearest_neighbor = std::distance(distanceVecData, min_position);
             cluster->nn = nearest_neighbor;
         }
     }
@@ -851,7 +828,7 @@ void parallel_update_clusters(
 void update_cluster_nn(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    float min_disitance) {
+    float min_distance) {
     for (Cluster* cluster : clusters) {
         if (cluster == nullptr) {
             continue;
@@ -859,7 +836,7 @@ void update_cluster_nn(
 
         if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
             if (distance_arr.size() == 0) {
-                cluster->update_nn(min_disitance);
+                cluster->update_nn(min_distance);
             } else {
                 cluster->update_nn(distance_arr);
             }
@@ -918,10 +895,10 @@ void RAC_i(
 }
 
 std::vector<int> RAC(
-    Eigen::MatrixXd& base_arr,
+    Eigen::MatrixXd base_arr,
     float min_distance,
     int batchSize,
-    Eigen::SparseMatrix<bool>& connectivity,
+    Eigen::SparseMatrix<bool> connectivity,
     int no_processors = 0,
     const int NO_POINTS = 10000) {
 
@@ -982,3 +959,50 @@ std::vector<int> RAC(
     return cluster_labels;
 }
 //--------------------------------------End RAC Functions--------------------------------------
+
+
+
+
+//------------------------PYBIND INTERFACE----------------------------------
+void stupid_pybind_test() {
+    std::cout<<"this is a pybind test." << std::endl;
+
+}
+
+PYBIND11_MODULE(racplusplus, m){
+    m.doc() = R"doc( 
+        RACplusplus is a C++ optimized python package for performing
+        reciprocal agglomerative clustering.
+
+        Authors: Porter Hunley, Daniel Frees
+        2023
+    )doc";
+
+    m.def("rac", &RAC, R"fdoc(
+        Run RAC algorithm on a provided array of points.
+
+        Params:
+        [base_arr] -
+        [min_distance] - 
+        [batchSize] -
+        [connectivity] -    
+        [no_processors] - Hyperparameter, number of processors to use during computation. 
+                            Defaults to the number of processors found on your machine by C++
+                            std::thread hardware_concurrency() if 0 passed or no value passed.
+        [NO_POINTS] - Hyperparemeter, 
+
+        Output:
+        Returns an array of the group # each point was assigned to.
+    )fdoc");
+
+    m.def("test_rac", &main, R"fdoc(
+        Testing function to run and time RAC's run in C++.
+    )fdoc");
+
+    m.def("stupid_pybind_test", &stupid_pybind_test, R"fdoc(
+        Simple test function to see if pybind works.
+    )fdoc");
+
+    m.attr("__version__") = "0.9";
+}
+//------------------------END PYBIND INTERFACE----------------------------------

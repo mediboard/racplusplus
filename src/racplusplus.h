@@ -175,10 +175,10 @@ void RAC_i(
     const int NO_PROCESSORS);
 
 std::vector<int> RAC(
-    Eigen::MatrixXd& base_arr,
+    Eigen::MatrixXd base_arr,
     float min_distance,
     int batchSize,
-    Eigen::SparseMatrix<bool>& connectivity,
+    Eigen::SparseMatrix<bool> connectivity,
     int no_processors,
     const int NO_POINTS);
 //--------------------------------------End RAC Functions--------------------------------------
