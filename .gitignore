@@ -9,3 +9,5 @@
 build/*
 racplusplus.egg-info/*
 dist/*
+src/Eigen
+src/pybind11
