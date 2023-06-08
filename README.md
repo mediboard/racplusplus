@@ -5,34 +5,53 @@
 `1.` Make a new conda environment for racplusplus.
 
 *On the env:*
+
 `2.` Install necessary packages (numpy, pandas, pybind11, jupyter, scipy,  etc. lmk if you’d like my full “conda list” or a yaml for my condo environment)
+
 `3.` Upgrade python to 3.11.
+
 `4.` Make sure ipykernel is updated to 3.11 as well if you want to work out of a notebook:
 python3.11 -m pip install ipykernel
 python3.11 -m ipykernel install --user --name=python311
 
 *On your filesystem:*
+
 `5.` Create a folder for racplusplus.
+
 `6.` Clone into my GitHub repo https://github.com/mediboard/racplusplus 
-`7.` Change your symbolic links in this folder via `ln`.	Location for pybind11 for me: “/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/site-packages/pybind11”
-	Location for Eigen for me: “/usr/local/include/eigen3/Eigen”
+
+`7.` Change your symbolic links in this folder via `ln`.	
+
+- Location for pybind11 for me: “/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/site-packages/pybind11”
+- Location for Eigen for me: “/usr/local/include/eigen3/Eigen”
 
 *Building the package and executable:*
+
 `8.` Update the 4 vars at the top of the CMake:
-	- set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
-	- set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
-	- set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
-	- set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
+
+- set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
+
+- set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
+
+- set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
+
+- set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
+
 `9.` mkdir build
+
 `10.` cd build
+
 `11.` cmake ..
+
 `12.` make racplusplus (or make racplusplus_exe if you want the simple fully wrapped RAC test executable)
+
 `13.` Start a python environment
-	- Open a python3.11 shell or
-	- Run a python script with python3.11 (Make sure to import racplusplus before bumpy due to a glitch with OpenMP linkage) or 
-	- Run a jupyter notebook (with kernel = python311) [NOT YET WORKING]
-	To make the kernel: 
-	`python -m ipykernel install --user --name python3.11 --display-name "Python 3.11”`
+
+- Open a python3.11 shell or
+- Run a python script with python3.11 (Make sure to import racplusplus before bumpy due to a glitch with OpenMP linkage) or 
+- Run a jupyter notebook (with kernel = python311) [NOT YET WORKING]
+> To make the kernel: 
+> `python -m ipykernel install --user --name python3.11 --display-name "Python 3.11”`
 
 `14.` Import racplusplus and have fun!
 `15.` See "test/test_wrapper.py" for example usage. Example output running my python testing script:
