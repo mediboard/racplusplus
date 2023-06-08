@@ -69,7 +69,7 @@ set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
 `15.` See "test/test_wrapper.py" for example usage. Example output running my python testing script:
 
 ```bash
-~/Desktop/racplusplus  main ✗                                            0m ⚑
+~/Desktop/racplusplus  main ✔                                             11m
 ▶ python3 test/test_wrapper.py
 Sys Path: ['/Users/danielfrees/Desktop/racplusplus/test', '/Users/danielfrees/miniconda3/envs/racplusplus/lib/python311.zip', '/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11', '/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/lib-dynload', '/Users/danielfrees/miniconda3/envs/racplusplus/lib/python3.11/site-packages', '/Users/danielfrees/Desktop/racplusplus/test/test_wrapper.py/../../build', '/Users/danielfrees/Desktop/racplusplus/build']
 Python Version: 3.11.3 (main, Apr 19 2023, 18:51:09) [Clang 14.0.6 ]
@@ -85,9 +85,9 @@ Second Python racplusplus package test (Fully wrapped RAC):
 Starting Randomized RAC Test
 Number of Processors Found for Program Use: 4
 Actually running RAC now...
-Time taken to calculate initial dissimilarities: 5412ms
+Time taken to calculate initial dissimilarities: 5211ms
 RAC Finished!
-9996
+9680
 0
 0
 0
@@ -103,17 +103,21 @@ Generating sparse unweighted connectivity matrix (This takes around 20 seconds f
 Done generating sparse unweighted connectivity matrix.
 
 Running RAC from Python using numpy data matrix and scipy sparse csc connectivity matrix.
-Time taken to calculate initial dissimilarities: 9180ms
+Time taken to calculate initial dissimilarities: 8892ms
 Point Cluster Assignments: [   0    1    2 ... 2353 9998 9999]
 Numpy & Scipy <> RAC Interface test complete.
 
 Fourth Python racplusplus package test (Numpy & Scipy <> RAC Interface w/o Conn Matrix):
 Running RAC from Python using numpy data matrix and empty scipy sparse lil connectivity matrix.
-Time taken to calculate initial dissimilarities: 4480ms
+Time taken to calculate initial dissimilarities: 4547ms
 Point Cluster Assignments: [   0    1    2 ... 9997 9998 9999]
 Numpy & Scipy <> RAC Interface w/o Conn Matrix test complete.
 
 Python Script racplusplus package test complete!
+
+(racplusplus)
+~/Desktop/racplusplus  main ✔                                             11m
+▶
 ```
 
 <br />
