@@ -32,7 +32,7 @@ int main() {
     std::cout << "Starting Randomized RAC Test" << std::endl;
     std::cout << "Number of Processors Found for Program Use: " << getProcessorCount() << std::endl;
     // 5000 - 1061
-    const int NO_POINTS = 10000;
+    const int NO_POINTS = 20000;
     Eigen::MatrixXd test = generateRandomMatrix(NO_POINTS, 768, 10);
     // Shift and scale the values to the range 0-1
     test = (test + Eigen::MatrixXd::Constant(NO_POINTS, 768, 1.)) / 2.;
@@ -50,7 +50,7 @@ int main() {
 
     //set up test
     double max_merge_distance = .035;
-    int batch_size = 1000;
+    int batch_size = 100;
     int no_processors = 0;
     //actually run test
     std::vector<int> labels = RAC(test, max_merge_distance, connectivity, batch_size, no_processors);
@@ -925,7 +925,6 @@ std::vector<int> RAC(
         Cluster* cluster = new Cluster(i);
         clusters.push_back(cluster);
     }
-    Eigen::setNbThreads(8);
     Eigen::MatrixXd distance_arr;
 
     if (connectivity.size() != 0) {
@@ -942,7 +941,6 @@ std::vector<int> RAC(
     RAC_i(clusters, max_merge_distance, distance_arr, sort_neighbor, update_neighbors, merging_arrays, NO_PROCESSORS);
 
     // Set Eigen Threads according to Number of processors
-    Eigen::setNbThreads(NO_PROCESSORS);
     std::vector<std::pair<int, int> > cluster_idx;
     for (Cluster* cluster : clusters) {
         if (cluster == nullptr) {
