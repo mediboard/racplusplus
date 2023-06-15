@@ -15,7 +15,7 @@ print("\nSee how it performs with a connectivity matrix")
 # Set up matrix by size and density
 rows = 10
 cols = 10
-density = 1
+density = .3
 np.random.seed(42)
 
 num_ones = int(rows * cols * density)
@@ -46,22 +46,34 @@ batch_size = 1000
 no_processors = 1
 test_matrix = np.random.random((rows, 768))
 
+# print(np.dot(test_matrix, test_matrix.T) / (np.linalg.norm(test_matrix) g.norm(test_matrix)))
+
 print("Running RAC from Python using numpy data matrix and scipy sparse csc connectivity matrix.")
 labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, batch_size, no_processors)
 print(f"Point Cluster Assignments: {len(set(labels))}")
-print(f"Full Point Cluster Assignments: {labels}")
-
 
 start = time.time()
 clustering = AgglomerativeClustering(
     n_clusters=None, 
     linkage='average',
     distance_threshold=max_merge_distance, 
-    # connectivity=symmetric_connectivity_matrix,
+    connectivity=symmetric_connectivity_matrix,
     metric='cosine').fit(test_matrix)
 
 print(f"Sklearn Point Cluster Assignments: {len(set(clustering.labels_))}")
-print(f"Full Sklearn Point Cluster Assignments: {clustering.labels_}")
+
+rac_labels = labels
+sklearn_labels = clustering.labels_
+
+sklearn_label_map = {key:i for (i, key) in enumerate(sklearn_labels)}
+rac_label_map = {key:i for (i, key) in enumerate(rac_labels)}
+transformed_sklearn = [sklearn_label_map[i] for i in sklearn_labels]
+trans_rac_labels = [rac_label_map[i] for i in rac_labels]
+
+print(transformed_sklearn)
+print(trans_rac_labels)
+
+print(trans_rac_labels == transformed_sklearn)
   
 end = time.time()
 print(end - start)

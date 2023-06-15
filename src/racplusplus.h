@@ -89,6 +89,7 @@ void calculate_initial_dissimilarities(
     Eigen::MatrixXd& base_arr,
     std::vector<Cluster*>& clusters,
     int batch_size,
+    double max_merge_distance,
     Eigen::SparseMatrix<bool>& connectivity);
 
 //-----------------------End Distance Calculations-------------------------

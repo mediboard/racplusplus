@@ -26,6 +26,19 @@ size_t getProcessorCount() {
     return NO_PROCESSORS != 0 ? static_cast<size_t>(NO_PROCESSORS) : static_cast<size_t>(8);
 }
 
+std::string vectorToString(const std::vector<std::pair<int, int>>& merges) {
+    std::ostringstream oss;
+    oss << "[";
+    for (auto it = merges.begin(); it != merges.end(); ++it) {
+        oss << "(" << it->first << ", " << it->second << ")";
+        if (std::next(it) != merges.end()) {
+            oss << ", ";
+        }
+    }
+    oss << "]";
+    return oss.str();
+}
+
 //----main
 int main() {
     std::cout << std::endl;
@@ -119,8 +132,10 @@ void Cluster::update_nn(double max_merge_distance) {
 
     double min = 1;
     int nn = -1;
+    std::cout << "NN for: " << this->id << std::endl;
     for (int neighbor : this->neighbors) {
         double dissimilarity = this->dissimilarities[neighbor];
+        std::cout << "Neighbor: " << neighbor << " Dissimilarity: " << dissimilarity << std::endl;
         if (dissimilarity < min) {
             min = dissimilarity;
             nn = neighbor;
@@ -220,7 +235,10 @@ void update_cluster_dissimilarities(
     std::vector<std::vector<int>>& merging_arrays,
     const int NO_PROCESSORS,
     Eigen::MatrixXd& base_arr) {
+
     auto start = std::chrono::high_resolution_clock::now();
+
+    std::cout << vectorToString(merges) << std::endl;
     if (merges.size() / NO_PROCESSORS > 10) {
         parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays, base_arr);
     } else {
@@ -337,6 +355,7 @@ void calculate_initial_dissimilarities(
     Eigen::MatrixXd& base_arr,
     std::vector<Cluster*>& clusters,
     Eigen::SparseMatrix<bool>& connectivity,
+    double max_merge_distance,
     int batch_size) {
 
     int clustersSize = static_cast<int>(clusters.size());
@@ -360,7 +379,7 @@ void calculate_initial_dissimilarities(
                     dissimilarities[j] = distance_vec[j];
                     neighbors.push_back(j);
 
-                    if (distance_vec[j] < min) {
+                    if (distance_vec[j] < min && distance_vec[j] < max_merge_distance) {
                         min = distance_vec[j];
                         nearest_neighbor = j;
                     }
@@ -371,8 +390,6 @@ void calculate_initial_dissimilarities(
             cluster->dissimilarities = dissimilarities;
 
             distance_vec[cluster->id] = std::numeric_limits<double>::max(); // Masking
-
-            auto distanceVecData = distance_vec.data();
             cluster->nn = nearest_neighbor;
         }
     }
@@ -487,7 +504,25 @@ double get_cluster_distances(
 
     if (main_cluster->dissimilarities.find(other_cluster_id) != main_cluster->dissimilarities.end()) {
         return main_cluster->dissimilarities[other_cluster_id];
+
+        // Eigen::MatrixXd full_main = base_arr(Eigen::all, main_cluster->indices);
+        // Eigen::MatrixXd full_other = base_arr(Eigen::all, other_cluster_idxs);
+        // double dist = pairwise_cosine(full_main, full_other).mean();
+
+        // std::cout << "avg_diss: " << avg_diss << std::endl;
+        // std::cout << "dist: " << dist << std::endl;
+
+        // return dist;
+    } else {
+        Eigen::MatrixXd full_main = base_arr(Eigen::all, main_cluster->indices);
+        Eigen::MatrixXd full_other = base_arr(Eigen::all, other_cluster_idxs);
+        double dist = pairwise_cosine(full_main, full_other).mean();
+
+        return dist;
     }
+
+    // if (other_cluster_id == 6) {
+    // }
 
     double rolling_dist = 0.0;
     int no_dists = 0.0;
@@ -567,27 +602,29 @@ void merge_cluster_apx(
         }
     }
 
-    std::cout << "main cluster: " << main_cluster->id << std::endl;
+    // std::cout << "main cluster: " << main_cluster->id << std::endl;
     std::vector<std::tuple<int, int, double> > needs_update;
     for (auto& static_id : static_neighbors) {
         double avg_dist = -1.0;
 
         // if (merging_array[static_id] > 1) {
-        double main_dist_two = main_cluster->dissimilarities[static_id]; 
-        double secondary_dist_two = secondary_cluster->dissimilarities[static_id];
+        // double main_dist_two = main_cluster->dissimilarities[static_id]; 
+        // double secondary_dist_two = secondary_cluster->dissimilarities[static_id];
 
-        avg_dist = (main_cluster->indices.size() * main_dist_two + secondary_cluster->indices.size() * secondary_dist_two) / (main_cluster->indices.size() + secondary_cluster->indices.size());
-        std::cout << "static cluster: " << static_id << std::endl;
-        std::cout << "avg_dist: " << avg_dist << std::endl;
+        // avg_dist = (main_cluster->indices.size() * main_dist_two + secondary_cluster->indices.size() * secondary_dist_two) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+        // std::cout << "static cluster: " << static_id << std::endl;
+        // std::cout << "avg_dist: " << avg_dist << std::endl;
         // }
 
-        double main_dist = get_cluster_distances(main_cluster, clusters[static_id]->neighbors, static_id, base_arr);
-        double secondary_dist = get_cluster_distances(secondary_cluster, clusters[static_id]->neighbors, static_id, base_arr);
+        double main_dist = get_cluster_distances(main_cluster, clusters[static_id]->indices, static_id, base_arr);
+        double secondary_dist = get_cluster_distances(secondary_cluster, clusters[static_id]->indices, static_id, base_arr);
 
         avg_dist = (main_cluster->indices.size() * main_dist + secondary_cluster->indices.size() * secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
-        std::cout << "other avg_dist: " << avg_dist << std::endl;
+        // std::cout << "other avg_dist: " << avg_dist << std::endl;
 
         needs_update.push_back(std::make_tuple(main_cluster->id, static_id, avg_dist));
+        new_neighbors.push_back(static_id);
+        new_dissimilarities[static_id] = avg_dist;
         merging_array[static_id] = 0;
     }
 
@@ -596,40 +633,37 @@ void merge_cluster_apx(
 
         // if (merging_array[merging_id] > 3) {
         //     // Merging neighbors have the distance here
-        double main_primary_dist = main_cluster->dissimilarities[merging_id]; 
-        double main_secondary_dist = secondary_cluster->dissimilarities[merging_id];
-        double main_avg_dist = (main_cluster->indices.size() * main_primary_dist + secondary_cluster->indices.size() * main_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+        // double main_primary_dist = main_cluster->dissimilarities[merging_id]; 
+        // double main_secondary_dist = secondary_cluster->dissimilarities[merging_id];
+        // double main_avg_dist = (main_cluster->indices.size() * main_primary_dist + secondary_cluster->indices.size() * main_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
 
-        int secondary_merging_id = clusters[merging_id]->nn;
-        double secondary_primary_dist = main_cluster->dissimilarities[secondary_merging_id];
-        double secondary_secondary_dist = secondary_cluster->dissimilarities[secondary_merging_id];
-        double secondary_avg_dist = (main_cluster->indices.size() * secondary_primary_dist + secondary_cluster->indices.size() * secondary_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+        // int secondary_merging_id = clusters[merging_id]->nn;
+        // double secondary_primary_dist = main_cluster->dissimilarities[secondary_merging_id];
+        // double secondary_secondary_dist = secondary_cluster->dissimilarities[secondary_merging_id];
+        // double secondary_avg_dist = (main_cluster->indices.size() * secondary_primary_dist + secondary_cluster->indices.size() * secondary_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
 
-        avg_dist = (clusters[merging_id]->indices.size() * main_avg_dist + clusters[secondary_merging_id]->indices.size() * secondary_avg_dist) / (clusters[merging_id]->indices.size() + clusters[secondary_merging_id]->indices.size());
+        // avg_dist = (clusters[merging_id]->indices.size() * main_avg_dist + clusters[secondary_merging_id]->indices.size() * secondary_avg_dist) / (clusters[merging_id]->indices.size() + clusters[secondary_merging_id]->indices.size());
 
-        std::cout << "merging cluster: " << merging_id << std::endl;
-        std::cout << "avg_dist: " << avg_dist << std::endl;
+        // std::cout << "merging cluster: " << merging_id << std::endl;
+        // std::cout << "avg_dist: " << avg_dist << std::endl;
 
         //     new_neighbors.push_back(merging_id);
         //     new_dissimilarities[merging_id] = avg_dist;
 
         // } 
 
-        std::vector<int> combined_idxs = clusters[merging_id]->indices;
+        double main_primary_dist = get_cluster_distances(main_cluster, clusters[merging_id]->indices, merging_id, base_arr);
+        double main_secondary_dist = get_cluster_distances(secondary_cluster, clusters[merging_id]->indices, merging_id, base_arr);
+        double main_avg_dist = (main_cluster->indices.size() * main_primary_dist + secondary_cluster->indices.size() * main_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
 
-        // add nn indices
-        main_primary_dist = get_cluster_distances(main_cluster, clusters[merging_id]->neighbors, merging_id, base_arr);
-        main_secondary_dist = get_cluster_distances(secondary_cluster, clusters[merging_id]->neighbors, merging_id, base_arr);
-        main_avg_dist = (main_cluster->indices.size() * main_primary_dist + secondary_cluster->indices.size() * main_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
-
-        secondary_merging_id = clusters[merging_id]->nn;
-        secondary_primary_dist = get_cluster_distances(main_cluster, clusters[secondary_merging_id]->neighbors, secondary_merging_id, base_arr);
-        secondary_secondary_dist = get_cluster_distances(secondary_cluster, clusters[secondary_merging_id]->neighbors, secondary_merging_id, base_arr);
-        secondary_avg_dist = (main_cluster->indices.size() * secondary_primary_dist + secondary_cluster->indices.size() * secondary_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+        int secondary_merging_id = clusters[merging_id]->nn;
+        double secondary_primary_dist = get_cluster_distances(main_cluster, clusters[secondary_merging_id]->indices, secondary_merging_id, base_arr);
+        double secondary_secondary_dist = get_cluster_distances(secondary_cluster, clusters[secondary_merging_id]->indices, secondary_merging_id, base_arr);
+        double secondary_avg_dist = (main_cluster->indices.size() * secondary_primary_dist + secondary_cluster->indices.size() * secondary_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
 
         avg_dist = (clusters[merging_id]->indices.size() * main_avg_dist + clusters[secondary_merging_id]->indices.size() * secondary_avg_dist) / (clusters[merging_id]->indices.size() + clusters[secondary_merging_id]->indices.size());
 
-        std::cout << "other avg_dist: " << avg_dist << std::endl;
+        // std::cout << "other avg_dist: " << avg_dist << std::endl;
 
         new_neighbors.push_back(merging_id);
         new_dissimilarities[merging_id] = avg_dist;
@@ -993,6 +1027,12 @@ std::vector<int> RAC(
 
     base_arr = base_arr.transpose().colwise().normalized().eval();
 
+    std::cout << pairwise_cosine(base_arr, base_arr) << std::endl;
+    std::vector<int> one_cluster_idxs = {0, 4, 9};
+    std::vector<int> two_cluster_idxs = {6};
+    std::cout << pairwise_cosine(base_arr(Eigen::all, one_cluster_idxs), base_arr(Eigen::all, two_cluster_idxs)) << std::endl;
+
+
     // start timer
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<Cluster*> clusters;
@@ -1003,7 +1043,7 @@ std::vector<int> RAC(
     Eigen::MatrixXd distance_arr;
 
     if (connectivity.size() != 0) {
-        calculate_initial_dissimilarities(base_arr, clusters, connectivity, BATCHSIZE);
+        calculate_initial_dissimilarities(base_arr, clusters, connectivity, max_merge_distance, BATCHSIZE);
     } else {
         distance_arr = calculate_initial_dissimilarities(base_arr, clusters, max_merge_distance);
     }
