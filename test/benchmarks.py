@@ -15,7 +15,7 @@ print("\nSee how it performs with a connectivity matrix")
 # Set up matrix by size and density
 rows = 10
 cols = 10
-density = .3
+density = .3 
 np.random.seed(42)
 
 num_ones = int(rows * cols * density)
