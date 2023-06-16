@@ -19,6 +19,7 @@ namespace py = pybind11;
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 #include <random>
+#include <numeric>
 
 //get number of processors
 size_t getProcessorCount() {
@@ -132,10 +133,12 @@ void Cluster::update_nn(double max_merge_distance) {
 
     double min = 1;
     int nn = -1;
-    std::cout << "NN for: " << this->id << std::endl;
+
     for (int neighbor : this->neighbors) {
         double dissimilarity = this->dissimilarities[neighbor];
-        std::cout << "Neighbor: " << neighbor << " Dissimilarity: " << dissimilarity << std::endl;
+        if (this->id == 0 || this->id == 1 || neighbor == 1) {
+            std::cout << "Cluster: " << this->id << " Neighbor: " << neighbor << " Dissimilarity: " << dissimilarity << std::endl;
+        }
         if (dissimilarity < min) {
             min = dissimilarity;
             nn = neighbor;
@@ -240,10 +243,10 @@ void update_cluster_dissimilarities(
 
     std::cout << vectorToString(merges) << std::endl;
     if (merges.size() / NO_PROCESSORS > 10) {
-        parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays, base_arr);
+        parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays);
     } else {
         for (std::pair<int, int> merge : merges) {
-            merge_cluster_apx(merge, clusters, merging_arrays[0], base_arr);
+            merge_cluster_linkage(merge, clusters, merging_arrays[0]);
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -586,7 +589,48 @@ std::pair<std::vector<int>, std::vector<int> > split_neighbors(
     return std::make_pair(static_neighbors, merging_neighbors);
 }
 
-void merge_cluster_linkage(
+void merge_cluster_min_linkage(
+    std::pair<int, int>& merge,
+    std::vector<Cluster*>& clusters,
+    std::vector<int>& merging_array) {
+
+    Cluster* main_cluster = clusters[merge.first];
+    Cluster* secondary_cluster = clusters[merge.second];
+
+    std::vector<int> new_neighbors;
+    std::unordered_map<int, double> new_dissimilarities;
+    std::vector<std::tuple<int, int, double> > needs_update;
+
+    std::vector<int> static_neighbors;
+    std::vector<int> merging_neighbors;
+    std::tie(static_neighbors, merging_neighbors) = split_neighbors(main_cluster, secondary_cluster, clusters, merging_array);
+
+    for (auto& id : static_neighbors) {
+        double main_dist = 0.0;
+        double secondary_dist = 0.0;
+
+        // Using merging array to minimize map lookups
+        if (merging_array[id] > 1) { // Both clusters share this neighbor
+            main_dist = main_cluster->dissimilarities[id];
+            secondary_dist = secondary_cluster->dissimilarities[id];
+        } else { // only one cluster has this neighbor
+            if (main_cluster->dissimilarities.find(id) != main_cluster->dissimilarities.end()) {
+                main_dist = main_cluster->dissimilarities[id];
+                secondary_dist = main_dist;
+            } else {
+                secondary_dist = secondary_cluster->dissimilarities[id];
+                main_dist = secondary_dist;
+            }
+        }
+    }
+
+    for (auto& id : merging_neighbors) {
+        
+    }
+}
+
+
+void merge_cluster_symetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array) {
@@ -635,42 +679,58 @@ void merge_cluster_linkage(
         // First focus on other
         double main_other_dist = 0.0;
         double secondary_other_dist = 0.0;
-        if (main_cluster->dissimilarities.find(id) != main_cluster->dissimilarities.end()) {
+
+        std::vector<double> weighted_dists;
+        std::vector<int> weighted_no;
+
+        Cluster* other_cluster = clusters[id];
+
+        bool main_has_other = main_cluster->dissimilarities.find(id) != main_cluster->dissimilarities.end();
+        bool secondary_has_other = secondary_cluster->dissimilarities.find(id) != secondary_cluster->dissimilarities.end();
+
+        if (main_has_other) {
             main_other_dist = main_cluster->dissimilarities[id];
-        } else {
-            main_other_dist = secondary_cluster->dissimilarities[id];
+            weighted_dists.push_back(main_other_dist * (main_cluster->indices.size() + other_cluster->indices.size()));
+            weighted_no.push_back(main_cluster->indices.size() + other_cluster->indices.size());
         }
 
-        if (secondary_cluster->dissimilarities.find(id) != secondary_cluster->dissimilarities.end()) {
+        if (secondary_has_other) {
             secondary_other_dist = secondary_cluster->dissimilarities[id];
-        } else {
-            secondary_other_dist = main_cluster->dissimilarities[id];
+            weighted_dists.push_back(secondary_other_dist * (secondary_cluster->indices.size() + other_cluster->indices.size()));
+            weighted_no.push_back(secondary_cluster->indices.size() + other_cluster->indices.size());
         }
 
-        int no_main = main_cluster->indices.size();
-        int no_secondary = secondary_cluster->indices.size();
-        double other_dist = (main_other_dist * no_main + secondary_other_dist * no_secondary) / (no_main + no_secondary);
-
-        // Now get NN
         int nn = clusters[id]->nn;
         double main_nn_dist = 0.0;
         double secondary_nn_dist = 0.0;
-        if (main_cluster->dissimilarities.find(nn) != main_cluster->dissimilarities.end()) {
+
+        bool main_has_nn = main_cluster->dissimilarities.find(nn) != main_cluster->dissimilarities.end();
+        bool secondary_has_nn = secondary_cluster->dissimilarities.find(nn) != secondary_cluster->dissimilarities.end();
+
+        if (main_has_nn) {
             main_nn_dist = main_cluster->dissimilarities[nn];
-        } else {
-            main_nn_dist = secondary_cluster->dissimilarities[nn];
+            weighted_dists.push_back(main_nn_dist * (main_cluster->indices.size() + clusters[nn]->indices.size()));
+            weighted_no.push_back(main_cluster->indices.size() + clusters[nn]->indices.size());
         }
 
-        if (secondary_cluster->dissimilarities.find(nn) != secondary_cluster->dissimilarities.end()) {
+        if (secondary_has_nn) {
             secondary_nn_dist = secondary_cluster->dissimilarities[nn];
-        } else {
-            secondary_nn_dist = main_cluster->dissimilarities[nn];
+            weighted_dists.push_back(secondary_nn_dist * (secondary_cluster->indices.size() + clusters[nn]->indices.size()));
+            weighted_no.push_back(secondary_cluster->indices.size() + clusters[nn]->indices.size());
         }
-        double nn_dist = (main_nn_dist * no_main + secondary_nn_dist * no_secondary) / (no_main + no_secondary);
 
-        int no_other = clusters[id]->indices.size();
-        int no_nn = clusters[nn]->indices.size();
-        double merge_dist = (other_dist * no_other + nn_dist * no_nn) / (no_other + no_nn);
+        double merge_dist = std::accumulate(weighted_dists.begin(), weighted_dists.end(), 0.0) / std::accumulate(weighted_no.begin(), weighted_no.end(), 0.0);
+
+        if ((main_cluster -> id == 1 && id == 0) || (main_cluster->id == 0 && id == 1)) {
+            std::cout << "Main: " << main_cluster->id << " id " << id << std::endl;
+            // std::cout << "Main other dist: " << main_other_dist << std::endl;
+            // std::cout << "Secondary other dist: " << secondary_other_dist << std::endl;
+            // std::cout << "Main nn dist: " << main_nn_dist << std::endl;
+            // std::cout << "Secondary nn dist: " << secondary_nn_dist << std::endl;
+            // std::cout << "Other dist: " << other_dist << std::endl;
+            // std::cout << "NN dist: " << nn_dist << std::endl;
+            std::cout << "Merge dist: " << merge_dist << std::endl;
+        }
 
         new_neighbors.push_back(id);
         new_dissimilarities[id] = merge_dist;
@@ -1118,11 +1178,14 @@ std::vector<int> RAC(
     std::vector<std::vector<int>> merging_arrays(NO_PROCESSORS, std::vector<int>(NO_POINTS));
 
     base_arr = base_arr.transpose().colwise().normalized().eval();
+    Eigen::MatrixXd distance = pairwise_cosine(base_arr, base_arr);
+    std::cout << distance(0, 12) << std::endl;
+    std::cout << distance(24, 1) << std::endl;
+    std::cout << distance(24, 12) << std::endl;
 
-    std::cout << pairwise_cosine(base_arr, base_arr) << std::endl;
+    // std::cout << pairwise_cosine(base_arr, base_arr) << std::endl;
     std::vector<int> one_cluster_idxs = {0, 4, 9};
     std::vector<int> two_cluster_idxs = {6};
-    std::cout << pairwise_cosine(base_arr(Eigen::all, one_cluster_idxs), base_arr(Eigen::all, two_cluster_idxs)) << std::endl;
 
 
     // start timer
