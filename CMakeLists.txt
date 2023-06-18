@@ -12,17 +12,17 @@ find_package(pybind11 REQUIRED)
 #-------------------------------------------------------------
 
 #----------------------------set directories------------------------
-set(LLVM_LIBRARIES /Users/porterhunley/opt/anaconda3/envs/racpp_native/lib)
-set(PYTHON311_LIBRARIES /Users/porterhunley/opt/anaconda3/envs/racpp_native/lib/python3.11)
-set(PYTHON311_INCLUDE_DIRS /Users/porterhunley/opt/anaconda3/envs/racpp_native/include/python3.11)
+set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
+set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
+set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
 set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
 #----------------------------end set directories------------------------
 
-set(ENV{CXX} "/Users/porterhunley/opt/anaconda3/envs/racpp_native/bin/clang++")
-set(CMAKE_CXX_COMPILER /Users/porterhunley/opt/anaconda3/envs/racpp_native/bin/clang++)
+set(ENV{CXX} "/usr/local/bin/clang++")
+set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes -mcpu=native -fopenmp")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LLVM_LIBRARIES} -L${PYTHON311_LIBRARIES} -lpython3.11 -Wl,-rpath,${LLVM_LIBRARIES}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall -fuse-ld=lld -fcolor-diagnostics -fansi-escape-codes -march=native -fopenmp")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LLVM_LIBRARIES} -L${PYTHON311_LIBRARIES} -lpython3.11 -Wl,-rpath,${LLVM_LIBRARIES}")
 set(CMAKE_OSX_SYSROOT ${MACOS_SDK})
 
 #-------------------------------------Include Directories----------------------------

@@ -3,12 +3,11 @@ import os
 import pybind11
 # Append the parent directory of racplusplus package to system path
 sys.path.append(os.path.join(os.path.abspath(__file__), "..", "..", "build"))
-sys.path.append("/Users/porterhunley/repos/racplusplus/build")
+sys.path.append("/Users/danielfrees/Desktop/racplusplus/build")
 print(f"Sys Path: {sys.path}")
 print(f"Python Version: {sys.version}")
-# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-import numpy as np
 import racplusplus
+import numpy as np
 import scipy.sparse as sp
 
 print("\nFirst Python racplusplus package test (Basic IO):")
