@@ -108,7 +108,12 @@ void merge_cluster_apx(
     std::vector<int>& merging_array,
     Eigen::MatrixXd& base_arr);
 
-void merge_cluster_linkage(
+void merge_cluster_min_linkage(
+    std::pair<int, int>& merge,
+    std::vector<Cluster*>& clusters,
+    std::vector<int>& merging_array);
+
+void merge_cluster_symetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array);
@@ -133,8 +138,14 @@ void parallel_merge_clusters(
     std::vector<std::vector<int>>& merging_arrays,
     Eigen::MatrixXd& base_arr);
 
-void parallel_merge_clusters(
-    std::vector<std::pair<int, int> >& merges, 
+void parallel_merge_symetric(
+    std::vector<std::pair<int, int> >& merges,
+    std::vector<Cluster*>& clusters,
+    size_t no_threads,
+    std::vector<std::vector<int>>& merging_arrays);
+
+void parallel_merge_min(
+    std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     size_t no_threads,
     std::vector<std::vector<int>>& merging_arrays);
