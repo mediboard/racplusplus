@@ -65,8 +65,12 @@ double calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixX
 void update_cluster_dissimilarities(
     std::vector<std::pair<int, int> >& merges, 
     std::vector<Cluster*>& clusters,
-    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor,
-    std::vector<std::vector<int>>& merging_arrays,
+    const int NO_PROCESSORS);
+
+
+void update_cluster_dissimilarities(
+    std::vector<std::pair<int, int> >& merges, 
+    std::vector<Cluster*>& clusters,
     const int NO_PROCESSORS,
     Eigen::MatrixXd& base_arr);
 
@@ -76,8 +80,6 @@ void update_cluster_dissimilarities(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance,
-    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor,
-    std::vector<std::vector<int>>& merging_arrays,
     const int NO_PROCESSORS);
 
 Eigen::MatrixXd calculate_initial_dissimilarities(
@@ -95,41 +97,41 @@ void calculate_initial_dissimilarities(
 //-----------------------End Distance Calculations-------------------------
 
 //-----------------------Merging Functions-----------------------------------
-void merge_cluster_apx(
+void merge_cluster_full(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance);
 
-void merge_cluster_apx(
+void merge_cluster_compute_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& base_arr);
-
-void merge_cluster_min_linkage(
-    std::pair<int, int>& merge,
-    std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array);
 
 void merge_cluster_symetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array);
 
-void merge_clusters(
+void merge_clusters_compute(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& base_arr);
 
-void merge_clusters_dist(
+void merge_clusters_full(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array,
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance);
+
+void merge_clusters_symetric(
+    std::vector<std::pair<int, int> >& merges,
+    std::vector<Cluster*>& clusters,
+    std::vector<int>& merging_array);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges, 
@@ -138,13 +140,7 @@ void parallel_merge_clusters(
     std::vector<std::vector<int>>& merging_arrays,
     Eigen::MatrixXd& base_arr);
 
-void parallel_merge_symetric(
-    std::vector<std::pair<int, int> >& merges,
-    std::vector<Cluster*>& clusters,
-    size_t no_threads,
-    std::vector<std::vector<int>>& merging_arrays);
-
-void parallel_merge_min(
+void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     size_t no_threads,
@@ -196,15 +192,25 @@ std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clus
 void RAC_i(
     std::vector<Cluster*>& clusters, 
     double max_merge_distance, 
-    Eigen::MatrixXd& distance_arr, 
-    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor,
-    std::vector<std::vector<int>>& merging_arrays,
+    const int NO_PROCESSORS,
+    Eigen::MatrixXd& distance_arr);
+
+void RAC_i(
+    std::vector<Cluster*>& clusters, 
+    double max_merge_distance, 
+    Eigen::MatrixXd& base_arr,
+    const int NO_PROCESSORS);
+
+void RAC_i(
+    std::vector<Cluster*>& clusters, 
+    double max_merge_distance, 
     const int NO_PROCESSORS);
 
 std::vector<int> RAC(
     Eigen::MatrixXd& base_arr,
     double max_merge_distance,
     Eigen::SparseMatrix<bool>& connectivity,
+    std::string connectivity_type,
     int batch_size,
     int no_processors);
 
@@ -212,6 +218,7 @@ py::array RAC_py(
     Eigen::MatrixXd base_arr,
     double max_merge_distance,
     Eigen::SparseMatrix<bool> connectivity,
+    std::string connectivity_type,
     int batch_size,
     int no_processors);
 //--------------------------------------End RAC Functions--------------------------------------
