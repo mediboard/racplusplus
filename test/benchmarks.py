@@ -40,39 +40,41 @@ def run_test(rows, cols, seed):
     # Create the sparse symmetric matrix
     symmetric_connectivity_matrix = sp.sparse.csc_matrix((data, (all_indices, all_cols)), shape=(rows, cols))
     print("Done generating sparse unweighted connectivity matrix.\n")
-    print(symmetric_connectivity_matrix.todense()[17,6])
+    # print(symmetric_connectivity_matrix.todense()[17,6])
 
     max_merge_distance = .24
     batch_size = 1000
-    no_processors = 1
+    no_processors = 8
     test_matrix = np.random.random((rows, 768))
 
     print("Running RAC from Python using numpy data matrix and scipy sparse csc connectivity matrix.")
-    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, batch_size, no_processors)
+    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, "symetric", batch_size, no_processors)
     print(f"Point Cluster Assignments: {len(set(labels))}")
 
-    start = time.time()
-    clustering = AgglomerativeClustering(
-        n_clusters=None, 
-        linkage='average',
-        distance_threshold=max_merge_distance, 
-        connectivity=symmetric_connectivity_matrix,
-        metric='cosine').fit(test_matrix)
+    # start = time.time()
+    # clustering = AgglomerativeClustering(
+    #     n_clusters=None, 
+    #     linkage='average',
+    #     distance_threshold=max_merge_distance, 
+    #     connectivity=symmetric_connectivity_matrix,
+    #     metric='cosine').fit(test_matrix)
 
-    print(f"Sklearn Point Cluster Assignments: {len(set(clustering.labels_))}")
+    # print(f"Sklearn Point Cluster Assignments: {len(set(clustering.labels_))}")
+    # end = time.time()
+    # print(f"Time to run sklearn: {end - start}")
 
-    rac_labels = labels
-    sklearn_labels = clustering.labels_
+    # rac_labels = labels
+    # sklearn_labels = clustering.labels_
 
-    sklearn_label_map = {key:i for (i, key) in enumerate(sklearn_labels)}
-    rac_label_map = {key:i for (i, key) in enumerate(rac_labels)}
-    transformed_sklearn = [sklearn_label_map[i] for i in sklearn_labels]
-    trans_rac_labels = [rac_label_map[i] for i in rac_labels]
+    # sklearn_label_map = {key:i for (i, key) in enumerate(sklearn_labels)}
+    # rac_label_map = {key:i for (i, key) in enumerate(rac_labels)}
+    # transformed_sklearn = [sklearn_label_map[i] for i in sklearn_labels]
+    # trans_rac_labels = [rac_label_map[i] for i in rac_labels]
 
-    print(f"Sklearn: {transformed_sklearn}")
-    print(f"RAC--->: {trans_rac_labels}")
+    # print(f"Sklearn: {transformed_sklearn}")
+    # print(f"RAC--->: {trans_rac_labels}")
 
-    return trans_rac_labels == transformed_sklearn
+    # return trans_rac_labels == transformed_sklearn
 
 
 # result = True
@@ -85,5 +87,5 @@ def run_test(rows, cols, seed):
 
 # print(f"Test failed on seed {seed-1}.")
 
-run_test(20, 20, 38)
+run_test(15000, 15000, 38)
 
