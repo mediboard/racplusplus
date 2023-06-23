@@ -4,7 +4,7 @@
 #include "pybind11/include/pybind11/stl.h"
 namespace py = pybind11;
 
-#include "racplusplus.h"
+#include "_racplusplus.h"
 #include <array>
 #include <tuple>
 #include <unordered_map>
@@ -1262,7 +1262,7 @@ void simple_pybind_io_test() {
     std::cout << std::endl;
 }
 
-PYBIND11_MODULE(racplusplus, m){
+PYBIND11_MODULE(_racplusplus, m){
     m.doc() = R"doc( 
         RACplusplus is a C++ optimized python package for performing
         reciprocal agglomerative clustering.
