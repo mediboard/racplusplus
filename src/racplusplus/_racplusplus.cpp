@@ -390,6 +390,8 @@ void calculate_initial_dissimilarities(
         for (int i = batchStart; i < batchEnd; ++i) {
             Cluster* cluster = clusters[i];
             Eigen::VectorXd distance_vec = distance_mat.col(i - batchStart);
+            // Start timer
+            auto start = std::chrono::high_resolution_clock::now();
 
             std::vector<int> neighbors;
             std::unordered_map<int, double> dissimilarities;
@@ -397,8 +399,13 @@ void calculate_initial_dissimilarities(
             int distanceVecSize = static_cast<int>(distance_vec.size());
             int nearest_neighbor = -1;
             double min = 2;
-            for (int j = 0; j < distanceVecSize; ++j) {
-                if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
+
+            Eigen::SparseVector<bool> cluster_column = connectivity.innerVector(i);
+            for (Eigen::SparseVector<bool>::InnerIterator it(cluster_column); it; ++it) {
+                int j = it.index();
+                bool value = it.value();
+
+                if (j != i && value) {
                     dissimilarities[j] = distance_vec[j];
                     neighbors.push_back(j);
 
@@ -414,6 +421,11 @@ void calculate_initial_dissimilarities(
 
             distance_vec[cluster->id] = std::numeric_limits<double>::max(); // Masking
             cluster->nn = nearest_neighbor;
+
+            // Stop timer
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            INITIAL_NEIGHBOR_DURATIONS.push_back(duration.count());
         }
     }
 }
@@ -1201,6 +1213,9 @@ std::vector<int> RAC(
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     std::cout << "Time taken to calculate initial dissimilarities: " << duration << "ms" << std::endl;
+
+    // Output sum of initial neighbor durations
+    std::cout << "Sum of initial neighbor durations: " << std::accumulate(INITIAL_NEIGHBOR_DURATIONS.begin(), INITIAL_NEIGHBOR_DURATIONS.end(), 0) << "ms" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
     if (connectivity_type == "full") {

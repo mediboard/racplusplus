@@ -17,6 +17,7 @@ std::vector<long> COSINE_DURATIONS;
 std::vector<long> INDICES_DURATIONS;
 std::vector<long> MERGE_DURATIONS;
 std::vector<long> MISC_MERGE_DURATIONS;
+std::vector<long> INITIAL_NEIGHBOR_DURATIONS;
 
 #endif // GLOBAL_TIMING_VARS_H
 
