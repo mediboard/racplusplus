@@ -13,3 +13,4 @@ src/Eigen
 src/pybind11
 _skbuild/*
 *.egg-info/*
+*.egg-info
