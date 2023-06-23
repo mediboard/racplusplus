@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: racplusplus
-Version: 0.0.1
-Summary: Reciprocal Agglomerative Clustering, optimized for speed/ parallelization in C++.
-Author: Porter Hunley, Daniel Frees
-Author-email: porterhunley@themedicalboard.net, danielfrees@g.ucla.edu
-License: MIT
-Requires-Python: >=3.11
