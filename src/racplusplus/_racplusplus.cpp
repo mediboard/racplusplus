@@ -227,11 +227,14 @@ double calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixX
     return static_cast<double>(dissimilarity_matrix.mean());
 }
 
-void consolidate_indices(
-    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor_arr,
+std::vector<std::pair<int, std::vector<std::pair<int, double>>>> consolidate_indices(
+    std::vector<int>& sort_neighbor_arr,
     std::vector<std::pair<int, int> >& merges, 
     std::vector<Cluster*> clusters) {
-    
+
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> return_vectors;
+
+    int vector_idx = 0; 
     for (const auto& merge : merges) {
         int main = merge.first;
         int secondary = merge.second;
@@ -242,10 +245,17 @@ void consolidate_indices(
             int neighbor_idx = std::get<1>(clusters[main]->neighbors_needing_updates[i]);
             double dissimilarity = std::get<2>(clusters[main]->neighbors_needing_updates[i]);
 
-            sort_neighbor_arr[neighbor_idx].first = neighbor_idx;
-            sort_neighbor_arr[neighbor_idx].second.push_back(std::make_pair(main, dissimilarity));
+            if (sort_neighbor_arr[neighbor_idx] == -1) {
+                sort_neighbor_arr[neighbor_idx] = vector_idx;
+                return_vectors.push_back(std::make_pair(neighbor_idx, std::vector<std::pair<int, double>>()));
+                vector_idx++;
+            }
+
+            return_vectors[sort_neighbor_arr[neighbor_idx]].second.push_back(std::make_pair(main, dissimilarity));
         }
     }
+
+    return return_vectors;
 }
 
 void update_cluster_dissimilarities(
@@ -265,17 +275,15 @@ void update_cluster_dissimilarities(
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
+    static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
     static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
+    for (size_t i=0; i<neighbor_updates.size(); i++) {
+        update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
+        sort_neighbor_arr[neighbor_updates[i].first] = -1; 
     }
 }
 
@@ -295,18 +303,20 @@ void update_cluster_dissimilarities(
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
+    static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
+    start = std::chrono::high_resolution_clock::now();
     static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
+    for (size_t i=0; i<neighbor_updates.size(); i++) {
+        update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
+        sort_neighbor_arr[neighbor_updates[i].first] = -1;
     }
+
+    end = std::chrono::high_resolution_clock::now();
+    UPDATE_NEIGHBOR_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 }
 
 void update_cluster_dissimilarities(
@@ -326,15 +336,13 @@ void update_cluster_dissimilarities(
         }
     }
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
+    static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
     static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, distance_arr, max_merge_distance, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
+    for (size_t i=0; i<neighbor_updates.size(); i++) {
+        update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
+        sort_neighbor_arr[neighbor_updates[i].first] = -1;
     }
 }
 
@@ -932,8 +940,6 @@ void update_cluster_neighbors(
     std::vector<int>& update_neighbors) {
     Cluster* other_cluster = clusters[update_chunk.first];
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     std::vector<int> new_neighbors;
     std::vector<int> all_looped_neighbors;
     for (size_t i=0; i<update_chunk.second.size(); i++) {
@@ -944,8 +950,8 @@ void update_cluster_neighbors(
         update_neighbors[neighbor_id] = 1;
         update_neighbors[neighbor_nn_id] = -1;
 
-        other_cluster->dissimilarities[neighbor_id] = dissimilarity;
         if (dissimilarity >= 0) {
+            other_cluster->dissimilarities[neighbor_id] = dissimilarity;
             new_neighbors.push_back(neighbor_id);
         }
 
@@ -966,10 +972,6 @@ void update_cluster_neighbors(
     }
 
     other_cluster->neighbors = new_neighbors;
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    UPDATE_NEIGHBOR_DURATIONS.push_back(duration);
 }
 
 void update_cluster_neighbors(
@@ -1131,7 +1133,10 @@ void RAC_i(
 
         remove_secondary_clusters(merges, clusters);
 
+        auto start = std::chrono::high_resolution_clock::now();
         merges = find_reciprocal_nn(clusters);
+        auto end = std::chrono::high_resolution_clock::now();
+        UPDATE_NN_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     }
 }
 
@@ -1217,6 +1222,8 @@ std::vector<int> RAC(
     // Output sum of initial neighbor durations
     std::cout << "Sum of initial neighbor durations: " << std::accumulate(INITIAL_NEIGHBOR_DURATIONS.begin(), INITIAL_NEIGHBOR_DURATIONS.end(), 0) << "ms" << std::endl;
 
+    // Output sum of merge durations
+
     start = std::chrono::high_resolution_clock::now();
     if (connectivity_type == "full") {
         RAC_i(clusters, max_merge_distance, NO_PROCESSORS, distance_arr);
@@ -1225,6 +1232,14 @@ std::vector<int> RAC(
     } else { // Connctivity_type is "symetric"
         RAC_i(clusters, max_merge_distance, NO_PROCESSORS); 
     }
+
+    std::cout << "Sum of merge durations: " << std::accumulate(MERGE_DURATIONS.begin(), MERGE_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of update neighbor durations
+    std::cout << "Sum of update neighbor durations: " << std::accumulate(UPDATE_NEIGHBOR_DURATIONS.begin(), UPDATE_NEIGHBOR_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of update nn durations
+    std::cout << "Sum of update nn durations: " << std::accumulate(UPDATE_NN_DURATIONS.begin(), UPDATE_NN_DURATIONS.end(), 0) << "ms" << std::endl;
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
