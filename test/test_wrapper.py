@@ -7,6 +7,7 @@ sys.path.append("/Users/danielfrees/Desktop/racplusplus/build")
 print(f"Sys Path: {sys.path}")
 print(f"Python Version: {sys.version}")
 import racplusplus
+print(racplusplus)
 import numpy as np
 import scipy.sparse as sp
 
