@@ -136,9 +136,6 @@ void Cluster::update_nn(double max_merge_distance) {
 
     for (int neighbor : this->neighbors) {
         double dissimilarity = this->dissimilarities[neighbor];
-        if (this->id == 2 || this->id ==9) {
-            std::cout << "Cluster: " << this->id << " Neighbor: " << neighbor << " Dissimilarity: " << dissimilarity << std::endl;
-        }
         if (dissimilarity < min) {
             min = dissimilarity;
             nn = neighbor;
@@ -1184,6 +1181,8 @@ std::vector<int> RAC(
     const int BATCHSIZE = (batch_size != 0) ? batch_size : NO_POINTS / 10; 
 
     base_arr = base_arr.transpose().colwise().normalized().eval();
+
+    Eigen::setNbThreads(NO_PROCESSORS);
 
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<Cluster*> clusters;
