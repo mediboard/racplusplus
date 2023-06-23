@@ -1,31 +1,33 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_CXX_STANDARD 17)
 project(racplusplus VERSION "0.0.1")
 
-message(STATUS "Setting LLVM, Python3.11, SDK Directories")
-#----------------------------set directories------------------------
-set(LLVM_LIBRARIES /Users/danielfrees/llvm-project/llvm/lib)
-set(PYTHON311_LIBRARIES /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/lib)
-set(PYTHON311_INCLUDE_DIRS /usr/local/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/include/python3.11)
-set(MACOS_SDK /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
-#----------------------------end set directories------------------------
+message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
 
-message(STATUS "Setting C and C++ Compilers to llvm...")
-set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
-set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
-set(CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++) #needed to find lld linker
-set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
-set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
+# Set LLVM directories
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
+list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
 
-message(STATUS "Setting CMake Standard to 17...")
-set(CMAKE_CXX_STANDARD 17)
+# Set Python3.11 directories
+find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+message(STATUS "-- -- Found Python ${Python3_VERSION}")
+include_directories(${Python3_INCLUDE_DIRS})
+link_directories(${Python3_LIBRARY_DIRS})
 
-message(STATUS "Setting C++ Warning and Optimization Flags, Setting Linker to lld...")
+message(STATUS "\n-- Setting C and C++ Compilers to llvm...\n")
+set(ENV{CC} "${LLVM_TOOLS_BINARY_DIR}/clang")
+set(ENV{CXX} "${LLVM_TOOLS_BINARY_DIR}/clang++")
+set(CMAKE_CXX_COMPILER "${LLVM_TOOLS_BINARY_DIR}/clang++")
+set(ENV{LDFLAGS} "-L${LLVM_LIBRARY_DIRS}")
+set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
+
+#Set Opt, Warning Flags, Linker
+message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fuse-ld=lld -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes -march=native")
-
-message(STATUS "Setting CMake executable linker flags to link to LLVM libraries and python3.11.")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LLVM_LIBRARIES} -lpython3.11 -Wl,-rpath,${LLVM_LIBRARIES}")
-
-set(CMAKE_OSX_SYSROOT ${MACOS_SDK})
 
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development)
@@ -43,7 +45,6 @@ include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS} )
 #------------------------------------------------------------------------------------
 
-
 #-----------------------------------Make Library---------------------------------------
 set(python_module_name _racplusplus)
 pybind11_add_module(${python_module_name} MODULE
@@ -54,19 +55,77 @@ target_link_libraries(${python_module_name} PRIVATE
     ${pybind11_LIBRARIES}
     c++
     c++abi
-    #OpenMP::OpenMP_CXX
+    Eigen3::Eigen
 )
 #----------------------------------------------------------------------------------------
 
-#Set target
-# Specify the files or artifacts to be installed
+#Install the Cmake Target in src directory specified in setup.py
 install(TARGETS ${python_module_name}
-        DESTINATION .) #will install in the src directory specified in setup.py
+        DESTINATION .) 
+
+
+
+
+
+
+
+
+
+
+
 
 #NOT WORKING:
-
 #set(OpenMP_C_FLAGS "~/llvm-project/openmp")
 #set(OpenMP_C_LIB_NAMES "openmp")
 
 #find_package(OpenMP REQUIRED)
 #find_package(PythonExtensions REQUIRED)
+
+#---------------------------Fetch OpenMP and Eigen-------------------------
+#include(FetchContent)
+#set(FETCHCONTENT_QUIET OFF)
+#message(STATUS "\nFetching OpenMP. This may take a few minutes...\n")
+## Download and include OpenMP
+#FetchContent_Declare(
+#  openmp
+#  URL https://github.com/llvm/llvm-project/archive/main.tar.gz
+#)
+#FetchContent_MakeAvailable(openmp)
+## Specify OpenMP flags and libraries
+#set(OpenMP_CXX_FLAGS ${openmp_CXX_FLAGS})
+#set(OpenMP_CXX_LIBRARIES ${openmp_CXX_LIBRARIES})
+
+#message(STATUS "\nFetching Eigen3. This may take a few minutes...\n")
+## Download and include Eigen3
+#FetchContent_Declare(
+#  eigen
+#  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+#)
+#FetchContent_MakeAvailable(eigen)
+
+#------------------------End Fetch OpenMP and Eigen-------------------------
+
+#NOT NEEDED:
+
+#message(STATUS "Setting CMake executable linker flags to link to LLVM libraries and python3.11.")
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LLVM_LIBRARIES} -lpython3.11 -Wl,-rpath,${LLVM_LIBRARIES}")
+#cmake_policy(SET CMP0057 NEW)
+
+#find_package(OpenMP REQUIRED COMPONENTS CXX)
+#if(OpenMP_FOUND)
+#  message(STATUS "OpenMP found")
+#  message(STATUS "OpenMP CXX flags: ${OpenMP_CXX_FLAGS}")
+#  message(STATUS "OpenMP CXX libraries: ${OpenMP_CXX_LIBRARIES}")
+#else()
+#  message(FATAL_ERROR "OpenMP not found")
+#endif()
+
+##Apple Specific Stuff
+#
+#set(CMAKE_OSX_SYSROOT ${MACOS_SDK})
+#
+#
+## Set SDK directory
+#execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE MACOS_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
+#message(STATUS "Found macOS SDK at ${MACOS_SDK}")
+

@@ -1,10 +1,8 @@
-#include "pybind11/include/pybind11/pybind11.h"
-#include "pybind11/include/pybind11/eigen.h"
-#include "pybind11/include/pybind11/numpy.h"
-#include "pybind11/include/pybind11/stl.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 namespace py = pybind11;
-
-#include "_racplusplus.h"
 #include <array>
 #include <tuple>
 #include <unordered_map>
@@ -20,6 +18,8 @@ namespace py = pybind11;
 #include "Eigen/Sparse"
 #include <random>
 #include <numeric>
+
+#include "_racplusplus.h"
 
 //get number of processors
 size_t getProcessorCount() {
