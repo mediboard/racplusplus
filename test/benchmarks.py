@@ -48,7 +48,7 @@ def run_test(rows, cols, seed):
     test_matrix = np.random.random((rows, 768))
 
     print("Running RAC from Python using numpy data matrix and scipy sparse csc connectivity matrix.")
-    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, "symetric", batch_size, no_processors)
+    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, "symmetric", batch_size, no_processors)
     print(f"Point Cluster Assignments: {len(set(labels))}")
 
     # start = time.time()
