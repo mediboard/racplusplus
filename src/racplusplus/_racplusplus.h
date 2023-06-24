@@ -110,7 +110,7 @@ void merge_cluster_compute_linkage(
     std::vector<int>& merging_array,
     Eigen::MatrixXd& base_arr);
 
-void merge_cluster_symetric_linkage(
+void merge_cluster_symmetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array);
@@ -128,7 +128,7 @@ void merge_clusters_full(
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance);
 
-void merge_clusters_symetric(
+void merge_clusters_symmetric(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     std::vector<int>& merging_array);
