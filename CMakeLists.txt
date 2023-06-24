@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
-project(racplusplus VERSION "0.0.1")
+project(racplusplus VERSION "0.0.2")
+
+message(STATUS "\n-- Finding Prefix Paths...\n")
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
+if(DEFINED ENV{CONDA_PREFIX})
+    set(CONDA_PREFIX $ENV{CONDA_PREFIX})
+    message(STATUS "Loaded environment variable: CONDA_PREFIX=${CONDA_PREFIX_VALUE}")
+else()
+    message(STATUS "Environment variable CONDA_PREFIX is not set.")
+endif()
+list(APPEND CMAKE_PREFIX_PATH ${CONDA_PREFIX})
+
 
 message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
-
 # Set LLVM directories
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
