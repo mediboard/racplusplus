@@ -29,6 +29,16 @@ set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fuse-ld=lld -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes -march=native")
 
+#-------------------Apply OpenMP if Possible (FIXME: should be using find_package instead, but it is broken)------------
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-fopenmp" COMPILER_FLAG_SUPPORTED)
+if (COMPILER_FLAG_SUPPORTED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+else ()
+  message(WARNING "The compiler does not support -fopenmp. Not optimizing with OpenMP.")
+endif ()
+#-------------------------------------------------------------------------------------------------------------------
+
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development)
 find_package(Python3 REQUIRED Interpreter)
@@ -62,70 +72,3 @@ target_link_libraries(${python_module_name} PRIVATE
 #Install the Cmake Target in src directory specified in setup.py
 install(TARGETS ${python_module_name}
         DESTINATION .) 
-
-
-
-
-
-
-
-
-
-
-
-
-#NOT WORKING:
-#set(OpenMP_C_FLAGS "~/llvm-project/openmp")
-#set(OpenMP_C_LIB_NAMES "openmp")
-
-#find_package(OpenMP REQUIRED)
-#find_package(PythonExtensions REQUIRED)
-
-#---------------------------Fetch OpenMP and Eigen-------------------------
-#include(FetchContent)
-#set(FETCHCONTENT_QUIET OFF)
-#message(STATUS "\nFetching OpenMP. This may take a few minutes...\n")
-## Download and include OpenMP
-#FetchContent_Declare(
-#  openmp
-#  URL https://github.com/llvm/llvm-project/archive/main.tar.gz
-#)
-#FetchContent_MakeAvailable(openmp)
-## Specify OpenMP flags and libraries
-#set(OpenMP_CXX_FLAGS ${openmp_CXX_FLAGS})
-#set(OpenMP_CXX_LIBRARIES ${openmp_CXX_LIBRARIES})
-
-#message(STATUS "\nFetching Eigen3. This may take a few minutes...\n")
-## Download and include Eigen3
-#FetchContent_Declare(
-#  eigen
-#  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-#)
-#FetchContent_MakeAvailable(eigen)
-
-#------------------------End Fetch OpenMP and Eigen-------------------------
-
-#NOT NEEDED:
-
-#message(STATUS "Setting CMake executable linker flags to link to LLVM libraries and python3.11.")
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LLVM_LIBRARIES} -lpython3.11 -Wl,-rpath,${LLVM_LIBRARIES}")
-#cmake_policy(SET CMP0057 NEW)
-
-#find_package(OpenMP REQUIRED COMPONENTS CXX)
-#if(OpenMP_FOUND)
-#  message(STATUS "OpenMP found")
-#  message(STATUS "OpenMP CXX flags: ${OpenMP_CXX_FLAGS}")
-#  message(STATUS "OpenMP CXX libraries: ${OpenMP_CXX_LIBRARIES}")
-#else()
-#  message(FATAL_ERROR "OpenMP not found")
-#endif()
-
-##Apple Specific Stuff
-#
-#set(CMAKE_OSX_SYSROOT ${MACOS_SDK})
-#
-#
-## Set SDK directory
-#execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE MACOS_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
-#message(STATUS "Found macOS SDK at ${MACOS_SDK}")
-
