@@ -305,15 +305,22 @@ void update_cluster_dissimilarities(
     auto end = std::chrono::high_resolution_clock::now();
     MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
+    start = std::chrono::high_resolution_clock::now();
     static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
     std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
-    start = std::chrono::high_resolution_clock::now();
-    static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<neighbor_updates.size(); i++) {
-        update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
-        sort_neighbor_arr[neighbor_updates[i].first] = -1;
-    }
+    static std::vector<std::vector<int>> update_neighbors_arrays(NO_PROCESSORS, std::vector<int>(clusters.size()));
+    parallel_update_clusters(
+        neighbor_updates,
+        clusters,
+        update_neighbors_arrays,
+        sort_neighbor_arr,
+        NO_PROCESSORS);
+    // end = std::chrono::high_resolution_clock::now();
+    // for (size_t i=0; i<neighbor_updates.size(); i++) {
+    //     update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
+    //     sort_neighbor_arr[neighbor_updates[i].first] = -1;
+    // }
 
     end = std::chrono::high_resolution_clock::now();
     UPDATE_NEIGHBOR_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
@@ -1021,20 +1028,23 @@ void update_cluster_neighbors(
 void update_cluster_neighbors_p(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters, 
+    std::vector<int>& neighbor_sort_arr,
     std::vector<int>& update_neighbors) {
     for (auto& update: updates) {
         update_cluster_neighbors(update, clusters, update_neighbors);
+        neighbor_sort_arr[update.first] = -1;
     }
 }   
 
 void parallel_update_clusters(
-    std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& updates,
     std::vector<Cluster*>& clusters,
-    size_t no_threads, 
-    std::vector<int>& update_neighbors) {
+    std::vector<std::vector<int>>& update_neighbors_arrays,
+    std::vector<int>& neighbor_sort_arr,
+    size_t no_threads) {
 
     std::vector<std::thread> threads;
-    std::vector<std::vector<std::pair<int, std::vector<std::pair<int, double> > > > > update_chunks(no_threads);
+    std::vector<std::vector<std::pair<int, std::vector<std::pair<int, double>>>>> update_chunks(no_threads);
 
     size_t chunk_size = updates.size() / no_threads;
     size_t remainder = updates.size() % no_threads; 
@@ -1057,7 +1067,8 @@ void parallel_update_clusters(
             update_cluster_neighbors_p,
             std::ref(update_chunks[i]),
             std::ref(clusters),
-            std::ref(update_neighbors));
+            std::ref(neighbor_sort_arr),
+            std::ref(update_neighbors_arrays[i]));
 
         threads.push_back(std::move(update_thread));
     }
@@ -1069,19 +1080,15 @@ void parallel_update_clusters(
 
 void update_cluster_nn(
     std::vector<Cluster*>& clusters,
-    double max_merge_distance) {
+    double max_merge_distance,
+    std::vector<int>& nn_count) {
     for (Cluster* cluster : clusters) {
-        if (cluster == nullptr) {
-            continue;
-        }
-
-        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
-            cluster->update_nn(max_merge_distance);
-        }
+        cluster->update_nn(max_merge_distance);
+        nn_count[cluster->id] = 0;
     }
 }
 
-void update_cluster_nn(
+void update_cluster_nn_dist(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance) {
@@ -1093,6 +1100,68 @@ void update_cluster_nn(
         if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
             cluster->update_nn(distance_arr);
         }
+    }
+}
+
+std::vector<Cluster*> get_unique_nn(std::vector<Cluster*>& clusters, std::vector<int>& nn_count) {
+    std::vector<Cluster*> unique_nn;
+    for (Cluster* cluster : clusters) {
+        if (cluster == nullptr) {
+            continue;
+        }
+
+        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
+            if (nn_count[cluster->id] == 0) {
+                unique_nn.push_back(cluster);
+                nn_count[cluster->id]++;
+            }
+        }
+    }
+
+    return unique_nn;
+}
+
+
+void paralell_update_cluster_nn(
+    std::vector<Cluster*>& clusters,
+    double max_merge_distance,
+    size_t no_threads) {
+
+    // Get unique nn
+    static std::vector<int> nn_count = std::vector<int>(clusters.size(), 0);
+    std::vector<Cluster*> unique_nn = get_unique_nn(clusters, nn_count);
+
+    std::vector<std::thread> threads;
+    std::vector<std::vector<Cluster*>> cluster_chunks(no_threads);
+
+    size_t chunk_size = unique_nn.size() / no_threads;
+    size_t remainder = unique_nn.size() % no_threads; 
+
+    size_t start = 0, end = 0;
+    for (size_t i = 0; i < no_threads; i++) {
+        end = start + chunk_size;
+        if (i < remainder) {
+            end++;
+        }
+
+        if (end <= unique_nn.size()) {
+            cluster_chunks[i] = std::vector<Cluster*>(unique_nn.begin() + start, unique_nn.begin() + end);
+        }
+        start = end;
+    }
+
+    for (size_t i=0; i<no_threads; i++) {
+        std::thread update_thread = std::thread(
+            update_cluster_nn,
+            std::ref(cluster_chunks[i]),
+            max_merge_distance,
+            std::ref(nn_count));
+
+        threads.push_back(std::move(update_thread));
+    }
+
+    for (size_t i=0; i<no_threads; i++) {
+        threads[i].join();
     }
 }
 
@@ -1117,6 +1186,7 @@ std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clus
 
     return reciprocal_nn;
 }
+
 //-----------------------End Updating Nearest Neighbors-----------------------------------
 
 //--------------------------------------RAC Functions--------------------------------------
@@ -1129,11 +1199,11 @@ void RAC_i(
     while (merges.size() != 0) {
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS);
 
-        update_cluster_nn(clusters, max_merge_distance);
+        auto start = std::chrono::high_resolution_clock::now();
+        paralell_update_cluster_nn(clusters, max_merge_distance, NO_PROCESSORS);
 
         remove_secondary_clusters(merges, clusters);
 
-        auto start = std::chrono::high_resolution_clock::now();
         merges = find_reciprocal_nn(clusters);
         auto end = std::chrono::high_resolution_clock::now();
         UPDATE_NN_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
@@ -1150,7 +1220,7 @@ void RAC_i(
     while (merges.size() != 0) {
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS, base_arr);
 
-        update_cluster_nn(clusters, max_merge_distance);
+        // update_cluster_nn(clusters, max_merge_distance);
 
         remove_secondary_clusters(merges, clusters);
 
@@ -1168,7 +1238,7 @@ void RAC_i(
     while (merges.size() != 0) {
         update_cluster_dissimilarities(merges, clusters, distance_arr, max_merge_distance, NO_PROCESSORS);
 
-        update_cluster_nn(clusters, distance_arr, max_merge_distance);
+        update_cluster_nn_dist(clusters, distance_arr, max_merge_distance);
 
         remove_secondary_clusters(merges, clusters);
 

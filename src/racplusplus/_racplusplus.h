@@ -173,15 +173,22 @@ void update_cluster_neighbors(
 void update_cluster_neighbors_p(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters, 
+    std::vector<int>& neighbor_sort_arr,
     std::vector<int>& update_neighbors);
 
 void parallel_update_clusters(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters,
-    size_t no_threads, 
-    std::vector<int>& update_neighbors);
+    std::vector<std::vector<int>>& update_neighbors_arrays,
+    std::vector<int>& neighbor_sort_arr,
+    size_t no_threads);
 
 void update_cluster_nn(
+    std::vector<Cluster*>& clusters,
+    double min_disitance,
+    std::vector<int>& nn_count);
+
+void update_cluster_nn_dist(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
     double min_disitance);
