@@ -305,7 +305,6 @@ void update_cluster_dissimilarities(
     auto end = std::chrono::high_resolution_clock::now();
     MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-    start = std::chrono::high_resolution_clock::now();
     static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
     std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
@@ -315,7 +314,7 @@ void update_cluster_dissimilarities(
         clusters,
         update_neighbors_arrays,
         sort_neighbor_arr,
-        NO_PROCESSORS);
+        1);
     // end = std::chrono::high_resolution_clock::now();
     // for (size_t i=0; i<neighbor_updates.size(); i++) {
     //     update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
@@ -439,7 +438,7 @@ void calculate_initial_dissimilarities(
 
             // Stop timer
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
             INITIAL_NEIGHBOR_DURATIONS.push_back(duration.count());
         }
     }
@@ -947,6 +946,10 @@ void update_cluster_neighbors(
     std::vector<int>& update_neighbors) {
     Cluster* other_cluster = clusters[update_chunk.first];
 
+    int no_updates = update_chunk.second.size();
+    int no_neighbors = other_cluster->neighbors.size();
+    UPDATE_PERCENTAGES.push_back((double)no_updates / (double)no_neighbors);
+
     std::vector<int> new_neighbors;
     std::vector<int> all_looped_neighbors;
     for (size_t i=0; i<update_chunk.second.size(); i++) {
@@ -958,8 +961,11 @@ void update_cluster_neighbors(
         update_neighbors[neighbor_nn_id] = -1;
 
         if (dissimilarity >= 0) {
+            auto start = std::chrono::high_resolution_clock::now();
             other_cluster->dissimilarities[neighbor_id] = dissimilarity;
             new_neighbors.push_back(neighbor_id);
+            auto end = std::chrono::high_resolution_clock::now();
+            HASH_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
         }
 
         all_looped_neighbors.push_back(neighbor_id);
@@ -1290,7 +1296,7 @@ std::vector<int> RAC(
     std::cout << "Time taken to calculate initial dissimilarities: " << duration << "ms" << std::endl;
 
     // Output sum of initial neighbor durations
-    std::cout << "Sum of initial neighbor durations: " << std::accumulate(INITIAL_NEIGHBOR_DURATIONS.begin(), INITIAL_NEIGHBOR_DURATIONS.end(), 0) << "ms" << std::endl;
+    std::cout << "Sum of initial neighbor durations: " << std::accumulate(INITIAL_NEIGHBOR_DURATIONS.begin(), INITIAL_NEIGHBOR_DURATIONS.end(), 0) /1000 << "ms" << std::endl;
 
     // Output sum of merge durations
 
@@ -1310,6 +1316,12 @@ std::vector<int> RAC(
 
     // sum of update nn durations
     std::cout << "Sum of update nn durations: " << std::accumulate(UPDATE_NN_DURATIONS.begin(), UPDATE_NN_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of hash durations
+    std::cout << "Sum of hash durations: " << std::accumulate(HASH_DURATIONS.begin(), HASH_DURATIONS.end(), 0.0) / 1000 << "ms" << std::endl;
+
+    // average of update percentages
+    std::cout << "Average of update percentages: " << std::accumulate(UPDATE_PERCENTAGES.begin(), UPDATE_PERCENTAGES.end(), 0.0) / UPDATE_PERCENTAGES.size() << std::endl;
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

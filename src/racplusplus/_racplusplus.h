@@ -18,6 +18,8 @@ std::vector<long> INDICES_DURATIONS;
 std::vector<long> MERGE_DURATIONS;
 std::vector<long> MISC_MERGE_DURATIONS;
 std::vector<long> INITIAL_NEIGHBOR_DURATIONS;
+std::vector<long> HASH_DURATIONS;
+std::vector<double> UPDATE_PERCENTAGES;
 
 #endif // GLOBAL_TIMING_VARS_H
 
@@ -29,6 +31,7 @@ public:
     int id;
     bool will_merge;
     int nn;
+    // std::vector<std::pair<int, double>> neighbor_distances;
     std::vector<int> neighbors;
     std::vector<int> indices;
     std::unordered_map<int, double> dissimilarities;
