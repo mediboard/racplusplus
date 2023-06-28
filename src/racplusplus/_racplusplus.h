@@ -31,7 +31,7 @@ public:
     int id;
     bool will_merge;
     int nn;
-    // std::vector<std::pair<int, double>> neighbor_distances;
+    std::vector<std::pair<int, double>> neighbor_distances;
     std::vector<int> neighbors;
     std::vector<int> indices;
     std::unordered_map<int, double> dissimilarities;
@@ -117,7 +117,7 @@ void merge_cluster_compute_linkage(
 void merge_cluster_symetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array);
+    std::vector<std::pair<int, double>>& merging_array);
 
 void merge_clusters_compute(
     std::vector<std::pair<int, int> >& merges,
@@ -135,7 +135,7 @@ void merge_clusters_full(
 void merge_clusters_symetric(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array);
+    std::vector<std::pair<int, double>>& merging_array);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges, 
@@ -148,7 +148,7 @@ void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     size_t no_threads,
-    std::vector<std::vector<int>>& merging_arrays);
+    std::vector<std::vector<std::pair<int, double>>>& merging_arrays);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
