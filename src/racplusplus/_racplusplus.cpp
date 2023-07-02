@@ -310,12 +310,13 @@ void update_cluster_dissimilarities(
     std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
     static std::vector<std::vector<int>> update_neighbors_arrays(NO_PROCESSORS, std::vector<int>(clusters.size()));
+    // std::cout << "----------------------" << std::endl;
     parallel_update_clusters(
         neighbor_updates,
         clusters,
         update_neighbors_arrays,
         sort_neighbor_arr,
-        1);
+        NO_PROCESSORS);
 
     end = std::chrono::high_resolution_clock::now();
     UPDATE_NEIGHBOR_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
@@ -985,11 +986,12 @@ void update_cluster_neighbors(
     std::vector<int>& update_neighbors) {
     Cluster* other_cluster = clusters[update_chunk.first];
     // Need to make sure that this is keeping sorting garunteed
+    // std::cout << "Updating cluster: " << other_cluster->id << std::endl;
 
     // Update chunk is not gaunteed to be sorted
     int no_updates = update_chunk.second.size();
     int no_neighbors = other_cluster->neighbor_distances.size();
-    UPDATE_PERCENTAGES.push_back((double)no_updates / (double)no_neighbors);
+    // UPDATE_PERCENTAGES.push_back((double)no_updates / (double)no_neighbors);
 
     std::vector<std::pair<int, double>> new_neighbors;
     std::vector<int> all_looped_neighbors;
@@ -1250,7 +1252,7 @@ void RAC_i(
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS);
 
         auto start = std::chrono::high_resolution_clock::now();
-        paralell_update_cluster_nn(clusters, max_merge_distance, 1);
+        paralell_update_cluster_nn(clusters, max_merge_distance, NO_PROCESSORS);
 
         remove_secondary_clusters(merges, clusters);
 
@@ -1319,12 +1321,12 @@ std::vector<int> RAC(
 
     base_arr = base_arr.transpose().colwise().normalized().eval();
 
-    std::vector<int> cluster_one = {1, 4, 5};
-    std::vector<int> cluster_two = {0, 3};
+    // std::vector<int> cluster_one = {1, 4, 5};
+    // std::vector<int> cluster_two = {0, 3};
 
     //print out mean
-    Eigen::MatrixXd result = pairwise_cosine(base_arr(Eigen::all, cluster_one), base_arr(Eigen::all, cluster_two));
-    std::cout << "Mean: " << result.mean() << std::endl;
+    // Eigen::MatrixXd result = pairwise_cosine(base_arr(Eigen::all, cluster_one), base_arr(Eigen::all, cluster_two));
+    // std::cout << "Mean: " << result.mean() << std::endl;
 
     Eigen::setNbThreads(NO_PROCESSORS);
 
