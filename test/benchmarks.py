@@ -16,7 +16,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Set up matrix by size and density
 
 def run_test(rows, cols, seed):
-    density = .3
+    density =.3
     np.random.seed(seed)
 
     num_ones = int(rows * cols * density)
@@ -48,7 +48,9 @@ def run_test(rows, cols, seed):
     test_matrix = np.random.random((rows, 768))
 
     print("Running RAC from Python using numpy data matrix and scipy sparse csc connectivity matrix.")
-    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, "symetric", batch_size, no_processors)
+    # yep.start('rac.prof')
+    labels = racplusplus.rac(test_matrix, max_merge_distance, symmetric_connectivity_matrix, "symetric", batch_size, 1)
+    # yep.stop()
     print(f"Point Cluster Assignments: {len(set(labels))}")
 
     # start = time.time()
@@ -63,29 +65,34 @@ def run_test(rows, cols, seed):
     # end = time.time()
     # print(f"Time to run sklearn: {end - start}")
 
-    # rac_labels = labels
-    # sklearn_labels = clustering.labels_
+    # # rac_labels = labels
+    # # sklearn_labels = clustering.labels_
 
-    # sklearn_label_map = {key:i for (i, key) in enumerate(sklearn_labels)}
-    # rac_label_map = {key:i for (i, key) in enumerate(rac_labels)}
-    # transformed_sklearn = [sklearn_label_map[i] for i in sklearn_labels]
-    # trans_rac_labels = [rac_label_map[i] for i in rac_labels]
+    # # sklearn_label_map = {key:i for (i, key) in enumerate(sklearn_labels)}
+    # # rac_label_map = {key:i for (i, key) in enumerate(rac_labels)}
+    # # transformed_sklearn = [sklearn_label_map[i] for i in sklearn_labels]
+    # # trans_rac_labels = [rac_label_map[i] for i in rac_labels]
 
     # print(f"Sklearn: {transformed_sklearn}")
-    # print(f"RAC--->: {trans_rac_labels}")
+    print(f"RAC--->: {labels}")
 
     # return trans_rac_labels == transformed_sklearn
 
 
 # result = True
-# seed = 32
-# while result:
-#     result = run_test(20, 20, seed)
-#     # if (seed == 29):
-#     #     result = True
-#     seed += 1
-
+# seed = 82
+# try:
+#     while result:
+#         print(f"Running test on seed {seed}")
+#         result = run_test(10, 10, seed)
+#         # if (seed == 29):
+#         #     result = True
+#         seed += 1
+# except:
+#     print(f"Test failed on seed {seed-1}.")
 # print(f"Test failed on seed {seed-1}.")
 
-run_test(15000, 15000, 38)
 
+# while True:
+print(run_test(15000, 15000, 38))
+# print(run_test(10, 10, 83))

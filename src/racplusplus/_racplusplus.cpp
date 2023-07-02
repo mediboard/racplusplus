@@ -136,7 +136,7 @@ void Cluster::update_nn(double max_merge_distance) {
 
     for (auto& neighbor : this->neighbor_distances) {
         double dissimilarity = neighbor.second;
-        std::cout << "Cluster: " << this->id << " Neighbor: " << neighbor.first << " Dissimilarity: " << dissimilarity << std::endl;
+        // std::cout << "Cluster: " << this->id << " Neighbor: " << neighbor.first << " Dissimilarity: " << dissimilarity << std::endl;
         if (dissimilarity < min) {
             min = dissimilarity;
             nn = neighbor.first;
@@ -294,7 +294,7 @@ void update_cluster_dissimilarities(
     const int NO_PROCESSORS) {
 
     static std::vector<std::vector<std::pair<int, double>>> merging_arrays(NO_PROCESSORS, std::vector<std::pair<int, double>>(clusters.size()));
-
+    // std::cout << vectorToString(merges) << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     if (merges.size() / NO_PROCESSORS > 10) {
         parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays);
@@ -662,7 +662,7 @@ void merge_cluster_symetric_linkage(
             continue;
         }
 
-        if (merging_array[neighbor.first].first == 0) {
+        if (merging_array[neighbor.first].first <= 0) {
             unique_neighbors.push_back(neighbor.first);
         }
 
@@ -685,10 +685,16 @@ void merge_cluster_symetric_linkage(
         merging_array[neighbor.first].first += secondary_cluster->id + 1;
     }
 
+    // std::cout << "Unique neighbors: " << std::endl;
     for (auto& neighbor_id : unique_neighbors) {
+        // std::cout << "Neighbor: " << neighbor_id << std::endl;
         if (!clusters[neighbor_id]->will_merge) {
-            new_neighbors.push_back(std::make_pair(neighbor_id, merging_array[neighbor_id].second));
-            needs_update.push_back(std::make_tuple(main_cluster->id, neighbor_id, merging_array[neighbor_id].second));
+            double new_dist = merging_array[neighbor_id].second; 
+            if (merging_array[neighbor_id].first == main_cluster->id + 1) {
+                new_dist = new_dist / main_cluster->indices.size();
+            }
+            new_neighbors.push_back(std::make_pair(neighbor_id, new_dist));
+            needs_update.push_back(std::make_tuple(main_cluster->id, neighbor_id, new_dist));
             merging_array[neighbor_id].first = 0;
             merging_array[neighbor_id].second = 0.0;
             continue;
@@ -732,25 +738,33 @@ void merge_cluster_symetric_linkage(
 
         merging_array[neighbor_id].first = 0;
         merging_array[neighbor_id].second = 0.0;
-        merging_array[nn_id].first = 0;
-        merging_array[nn_id].second = 0.0;
-        merging_array[smallest_id].first = -1;
+        if (merging_array[nn_id].first != 0) { // nn is in unique neighbors
+            merging_array[nn_id].first = 0;
+            merging_array[nn_id].second = 0.0;
+            merging_array[smallest_id].first = -1;
+        }
     }
-    // print out new neighbors
-    for (auto& neighbor :new_neighbors) {
-        std::cout << neighbor.first << " " << neighbor.second << std::endl;
-    }
+    // std::cout << "Merging array for merge" << merge.first << " " << merge.second << std::endl;
+    // for (int i=0; i<merging_array.size(); ++i) {
+    //     std::cout << merging_array[i].first << " " << merging_array[i].second << std::endl;
+    // }
+    // std::cout << "-----------------" << std::endl;
 
-    std::cout << "-----------------" << std::endl;
-    // print out old neighbors
-    for (auto& neighbor : main_cluster->neighbor_distances) {
-        std::cout << neighbor.first << " " << neighbor.second << std::endl;
-    }
+    // // print out new neighbors
+    // for (auto& neighbor :new_neighbors) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
 
-    std::cout << "-----------------" << std::endl;
-    for (auto& neighbor : secondary_cluster->neighbor_distances) {
-        std::cout << neighbor.first << " " << neighbor.second << std::endl;
-    }
+    // std::cout << "-----------------" << std::endl;
+    // // print out old neighbors
+    // for (auto& neighbor : main_cluster->neighbor_distances) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
+
+    // std::cout << "-----------------" << std::endl;
+    // for (auto& neighbor : secondary_cluster->neighbor_distances) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
 
     main_cluster->neighbor_distances = new_neighbors;
     main_cluster->neighbors_needing_updates = needs_update;
@@ -1231,7 +1245,8 @@ void RAC_i(
 
     std::vector<std::pair<int, int>> merges = find_reciprocal_nn(clusters);
     while (merges.size() != 0) {
-        std::cout << "Merges: " << vectorToString(merges) << std::endl;
+        //print merges
+        // std::cout << vectorToString(merges) << std::endl;
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS);
 
         auto start = std::chrono::high_resolution_clock::now();
