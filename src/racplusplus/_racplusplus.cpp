@@ -151,10 +151,10 @@ void Cluster::update_nn(double max_merge_distance) {
 }
 
 void Cluster::update_nn(Eigen::MatrixXd& distance_arr, double max_merge_distance) {
-    if (neighbors.size() == 0) {
-        nn = -1;
-        return;
-    }
+    // if (neighbors.size() == 0) {
+    //     nn = -1;
+    //     return;
+    // }
 
     Eigen::MatrixXd::Index minRow;
     distance_arr.col(this->id).minCoeff(&minRow);
@@ -173,6 +173,18 @@ void Cluster::update_nn(Eigen::MatrixXd& distance_arr, double max_merge_distance
 
 
 //--------------------Helpers------------------------------------
+
+void printMatrixInfo(Eigen::MatrixXd& matrix) {
+    // Count the number of infinity, negative, and over 0.3 elements
+    int infCount = (matrix.array() == std::numeric_limits<double>::infinity()).count();
+    int negCount = (matrix.array() < 0.0).count();
+    int overCount = (matrix.array() > 0.5).count();
+
+    std::cout << "Number of inf elements: " << infCount << std::endl;
+    std::cout << "Number of negative elements: " << negCount << std::endl;
+    std::cout << "Number of elements over 0.5: " << overCount << std::endl;
+}
+
 // Function to generate a matrix filled with random numbers.
 // Function to generate a matrix filled with random numbers.
 Eigen::MatrixXd generateRandomMatrix(int rows, int cols, int seed) {
@@ -329,7 +341,7 @@ void update_cluster_dissimilarities(
     const int NO_PROCESSORS) {
 
     if (merges.size() / NO_PROCESSORS > 10) {
-        parallel_merge_clusters(merges, distance_arr, clusters, NO_PROCESSORS);
+        parallel_merge_clusters(merges, distance_arr, clusters, 1);
     } else {
         for (std::pair<int, int> merge : merges) {
             merge_cluster_full(merge, merges, clusters, distance_arr);
@@ -354,7 +366,7 @@ Eigen::MatrixXd calculate_initial_dissimilarities(
 
         for (size_t j=0; j<clusterSize; j++) {
             if (i == j) {
-                distance_mat(i, j) = 2;
+                distance_mat(i, j) = std::numeric_limits<double>::infinity();
                 continue;
             }
 
@@ -1146,7 +1158,7 @@ std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clus
             cluster->will_merge = (clusters[cluster->nn]->nn == cluster->id);
         }
 
-        if (cluster -> will_merge && cluster->id < cluster->nn) {
+        if (cluster->will_merge && cluster->id < cluster->nn) {
             reciprocal_nn.push_back(std::make_pair(cluster->id, cluster->nn));
         }
     }
