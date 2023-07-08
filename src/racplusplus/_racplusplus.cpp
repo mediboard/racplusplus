@@ -1,10 +1,8 @@
-#include "pybind11/include/pybind11/pybind11.h"
-#include "pybind11/include/pybind11/eigen.h"
-#include "pybind11/include/pybind11/numpy.h"
-#include "pybind11/include/pybind11/stl.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 namespace py = pybind11;
-
-#include "_racplusplus.h"
 #include <array>
 #include <tuple>
 #include <unordered_map>
@@ -20,6 +18,8 @@ namespace py = pybind11;
 #include "Eigen/Sparse"
 #include <random>
 #include <numeric>
+
+#include "_racplusplus.h"
 
 //get number of processors
 size_t getProcessorCount() {
@@ -312,7 +312,7 @@ void update_cluster_dissimilarities(
         parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays);
     } else {
         for (std::pair<int, int> merge : merges) {
-            merge_cluster_symetric_linkage(merge, clusters, merging_arrays[0]);
+            merge_cluster_symmetric_linkage(merge, clusters, merging_arrays[0]);
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -587,7 +587,7 @@ void merge_cluster_full(
     main_cluster->indices.insert(main_cluster->indices.end(), secondary_cluster->indices.begin(), secondary_cluster->indices.end());
 }
 
-void merge_cluster_symetric_linkage(
+void merge_cluster_symmetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
     std::vector<std::pair<int, double>>& merging_array) {
@@ -797,13 +797,13 @@ void merge_cluster_compute_linkage(
     main_cluster->neighbors_needing_updates = needs_update;
 }
 
-void merge_clusters_symetric(
+void merge_clusters_symmetric(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     std::vector<std::pair<int, double>>& merging_array) {
     
     for (auto& merge : merges) {
-        merge_cluster_symetric_linkage(merge, clusters, merging_array);
+        merge_cluster_symmetric_linkage(merge, clusters, merging_array);
     }
 }
 
@@ -863,7 +863,7 @@ void parallel_merge_clusters(
 
     for (size_t i=0; i<no_threads; i++) {
         std::thread merge_thread = std::thread(
-            merge_clusters_symetric,
+            merge_clusters_symmetric,
             std::ref(merge_chunks[i]),
             std::ref(clusters),
             std::ref(merging_arrays[i]));
@@ -1388,7 +1388,7 @@ PYBIND11_MODULE(_racplusplus, m){
                             Options: "full" - Assume everything is connected (Default).
                                      "compute" - Use a hybrid model by which missing links are computed and cached on the fly. More
                                      balanced but at computational cost. 
-                                     "symetric" - Use a weighted avergage of all connections between two clusters 
+                                     "symmetric" - Use a weighted average of all connections between two clusters 
                                      to compute the distance between them.
                             Default: "full"
         [no_processors] -   Hyperparameter, number of processors to use during computation. 
