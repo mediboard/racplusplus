@@ -9,7 +9,7 @@ namespace py = pybind11;
 #include <set>
 #include <chrono>
 #include <vector>
-#include <map>
+#include <limits>
 #include <iostream>
 #include <thread>
 #include <algorithm>
@@ -126,7 +126,7 @@ Cluster::Cluster(int id)
 
 
 void Cluster::update_nn(double max_merge_distance) {
-    if (neighbors.size() == 0) {
+    if (neighbor_distances.size() == 0) {
         nn = -1;
         return;
     }
@@ -134,11 +134,12 @@ void Cluster::update_nn(double max_merge_distance) {
     double min = 1;
     int nn = -1;
 
-    for (int neighbor : this->neighbors) {
-        double dissimilarity = this->dissimilarities[neighbor];
+    for (auto& neighbor : this->neighbor_distances) {
+        double dissimilarity = neighbor.second;
+        // std::cout << "Cluster: " << this->id << " Neighbor: " << neighbor.first << " Dissimilarity: " << dissimilarity << std::endl;
         if (dissimilarity < min) {
             min = dissimilarity;
-            nn = neighbor;
+            nn = neighbor.first;
         }
     }
 
@@ -149,29 +150,41 @@ void Cluster::update_nn(double max_merge_distance) {
     }
 }
 
-void Cluster::update_nn(Eigen::MatrixXd& distance_arr) {
-    if (neighbors.size() == 0) {
-        nn = -1;
-        return;
-    }
+void Cluster::update_nn(Eigen::MatrixXd& distance_arr, double max_merge_distance) {
+    // if (neighbors.size() == 0) {
+    //     nn = -1;
+    //     return;
+    // }
 
-    double min = 1;
-    int nn = -1;
-    for (int neighbor : this->neighbors) {
-        double dissimilarity = distance_arr(this->id, neighbor);
-        if (dissimilarity < min) {
-            min = dissimilarity;
-            nn = neighbor;
-        }
-    }
+    Eigen::MatrixXd::Index minRow;
+    distance_arr.col(this->id).minCoeff(&minRow);
 
-    this->nn = nn;
+    double min = distance_arr(minRow, this->id);
+    int nn = static_cast<int>(minRow);
+
+    if (min < max_merge_distance) {
+        this->nn = nn;
+    } else {
+        this->nn = -1;
+    }
 }
 
 //---------------------End Classes------------------------------------
 
 
 //--------------------Helpers------------------------------------
+
+void printMatrixInfo(Eigen::MatrixXd& matrix) {
+    // Count the number of infinity, negative, and over 0.3 elements
+    int infCount = (matrix.array() == std::numeric_limits<double>::infinity()).count();
+    int negCount = (matrix.array() < 0.0).count();
+    int overCount = (matrix.array() > 0.5).count();
+
+    std::cout << "Number of inf elements: " << infCount << std::endl;
+    std::cout << "Number of negative elements: " << negCount << std::endl;
+    std::cout << "Number of elements over 0.5: " << overCount << std::endl;
+}
+
 // Function to generate a matrix filled with random numbers.
 // Function to generate a matrix filled with random numbers.
 Eigen::MatrixXd generateRandomMatrix(int rows, int cols, int seed) {
@@ -227,11 +240,14 @@ double calculate_weighted_dissimilarity(Eigen::MatrixXd points_a, Eigen::MatrixX
     return static_cast<double>(dissimilarity_matrix.mean());
 }
 
-void consolidate_indices(
-    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& sort_neighbor_arr,
+std::vector<std::pair<int, std::vector<std::pair<int, double>>>> consolidate_indices(
+    std::vector<int>& sort_neighbor_arr,
     std::vector<std::pair<int, int> >& merges, 
     std::vector<Cluster*> clusters) {
-    
+
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> return_vectors;
+
+    int vector_idx = 0; 
     for (const auto& merge : merges) {
         int main = merge.first;
         int secondary = merge.second;
@@ -242,10 +258,17 @@ void consolidate_indices(
             int neighbor_idx = std::get<1>(clusters[main]->neighbors_needing_updates[i]);
             double dissimilarity = std::get<2>(clusters[main]->neighbors_needing_updates[i]);
 
-            sort_neighbor_arr[neighbor_idx].first = neighbor_idx;
-            sort_neighbor_arr[neighbor_idx].second.push_back(std::make_pair(main, dissimilarity));
+            if (sort_neighbor_arr[neighbor_idx] == -1) {
+                sort_neighbor_arr[neighbor_idx] = vector_idx;
+                return_vectors.push_back(std::make_pair(neighbor_idx, std::vector<std::pair<int, double>>()));
+                vector_idx++;
+            }
+
+            return_vectors[sort_neighbor_arr[neighbor_idx]].second.push_back(std::make_pair(main, dissimilarity));
         }
     }
+
+    return return_vectors;
 }
 
 void update_cluster_dissimilarities(
@@ -265,17 +288,15 @@ void update_cluster_dissimilarities(
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
+    static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
     static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
+    for (size_t i=0; i<neighbor_updates.size(); i++) {
+        update_cluster_neighbors(neighbor_updates[i], clusters, update_neighbors_arr);
+        sort_neighbor_arr[neighbor_updates[i].first] = -1; 
     }
 }
 
@@ -284,8 +305,8 @@ void update_cluster_dissimilarities(
     std::vector<Cluster*>& clusters,
     const int NO_PROCESSORS) {
 
-    static std::vector<std::vector<int>> merging_arrays(NO_PROCESSORS, std::vector<int>(clusters.size()));
-
+    static std::vector<std::vector<std::pair<int, double>>> merging_arrays(NO_PROCESSORS, std::vector<std::pair<int, double>>(clusters.size()));
+    // std::cout << vectorToString(merges) << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     if (merges.size() / NO_PROCESSORS > 10) {
         parallel_merge_clusters(merges, clusters, NO_PROCESSORS, merging_arrays);
@@ -295,47 +316,39 @@ void update_cluster_dissimilarities(
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    MERGE_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
+    static std::vector<int> sort_neighbor_arr(clusters.size(), -1);
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>> neighbor_updates = consolidate_indices(sort_neighbor_arr, merges, clusters);
 
-    static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
-    }
+    static std::vector<std::vector<int>> update_neighbors_arrays(NO_PROCESSORS, std::vector<int>(clusters.size()));
+    // std::cout << "----------------------" << std::endl;
+    parallel_update_clusters(
+        neighbor_updates,
+        clusters,
+        update_neighbors_arrays,
+        sort_neighbor_arr,
+        NO_PROCESSORS);
+
+    end = std::chrono::high_resolution_clock::now();
+    UPDATE_NEIGHBOR_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 }
 
 void update_cluster_dissimilarities(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    double max_merge_distance,
     const int NO_PROCESSORS) {
 
-    static std::vector<std::vector<int>> merging_arrays(NO_PROCESSORS, std::vector<int>(clusters.size()));
-
     if (merges.size() / NO_PROCESSORS > 10) {
-        parallel_merge_clusters(merges, distance_arr, clusters, NO_PROCESSORS, max_merge_distance, merging_arrays);
+        parallel_merge_clusters(merges, distance_arr, clusters, 1);
     } else {
         for (std::pair<int, int> merge : merges) {
-            merge_cluster_full(merge, clusters, merging_arrays[0], distance_arr, max_merge_distance);
+            merge_cluster_full(merge, merges, clusters, distance_arr);
         }
     }
 
-    static std::vector<std::pair<int, std::vector<std::pair<int, double>>>> sort_neighbor_arr(clusters.size());
-    consolidate_indices(sort_neighbor_arr, merges, clusters);
-
-    static std::vector<int> update_neighbors_arr(clusters.size());
-    for (size_t i=0; i<sort_neighbor_arr.size(); i++) {
-        if (sort_neighbor_arr[i].second.size() > 0) {
-            update_cluster_neighbors(sort_neighbor_arr[i], clusters, distance_arr, max_merge_distance, update_neighbors_arr);
-            sort_neighbor_arr[i].second.clear();
-        }
-    }
+    update_cluster_neighbors(distance_arr, merges);
 }
 
 Eigen::MatrixXd calculate_initial_dissimilarities(
@@ -353,7 +366,7 @@ Eigen::MatrixXd calculate_initial_dissimilarities(
 
         for (size_t j=0; j<clusterSize; j++) {
             if (i == j) {
-                distance_mat(i, j) = 2;
+                distance_mat(i, j) = std::numeric_limits<double>::infinity();
                 continue;
             }
 
@@ -390,17 +403,22 @@ void calculate_initial_dissimilarities(
         for (int i = batchStart; i < batchEnd; ++i) {
             Cluster* cluster = clusters[i];
             Eigen::VectorXd distance_vec = distance_mat.col(i - batchStart);
+            // Start timer
+            auto start = std::chrono::high_resolution_clock::now();
 
-            std::vector<int> neighbors;
-            std::unordered_map<int, double> dissimilarities;
+            std::vector<std::pair<int, double>> neighbors;
 
             int distanceVecSize = static_cast<int>(distance_vec.size());
             int nearest_neighbor = -1;
             double min = 2;
-            for (int j = 0; j < distanceVecSize; ++j) {
-                if (j != cluster->id && connectivity.coeff(cluster->id, j)) {
-                    dissimilarities[j] = distance_vec[j];
-                    neighbors.push_back(j);
+
+            Eigen::SparseVector<bool> cluster_column = connectivity.innerVector(i);
+            for (Eigen::SparseVector<bool>::InnerIterator it(cluster_column); it; ++it) {
+                int j = it.index();
+                bool value = it.value();
+
+                if (j != i && value) {
+                    neighbors.push_back(std::make_pair(j, distance_vec[j]));
 
                     if (distance_vec[j] < min && distance_vec[j] < max_merge_distance) {
                         min = distance_vec[j];
@@ -409,11 +427,14 @@ void calculate_initial_dissimilarities(
                 }
             }
 
-            cluster->neighbors = neighbors;
-            cluster->dissimilarities = dissimilarities;
-
-            distance_vec[cluster->id] = std::numeric_limits<double>::max(); // Masking
+            cluster->neighbor_distances = neighbors;
+            // distance_vec[cluster->id] = std::numeric_limits<double>::max(); // Masking
             cluster->nn = nearest_neighbor;
+
+            // Stop timer
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            INITIAL_NEIGHBOR_DURATIONS.push_back(duration.count());
         }
     }
 }
@@ -466,7 +487,7 @@ double get_cluster_distances(
     return (rolling_dist + new_dists_sum) / (no_dists + new_dists_no);
 }
 
-std::pair<std::vector<int>, std::vector<int> > split_neighbors(
+std::pair<std::vector<int>, std::vector<int>> split_neighbors(
     Cluster* main_cluster,
     Cluster* secondary_cluster,
     std::vector<Cluster*>& clusters,
@@ -519,196 +540,199 @@ std::pair<std::vector<int>, std::vector<int> > split_neighbors(
 // Merges with the full distance array
 void merge_cluster_full(
     std::pair<int, int>& merge,
+    std::vector<std::pair<int, int>>& merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array,
-    Eigen::MatrixXd& distance_arr,
-    double max_merge_distance) {
+    Eigen::MatrixXd& distance_arr) {
 
     Cluster* main_cluster = clusters[merge.first];
     Cluster* secondary_cluster = clusters[merge.second];
 
-    std::vector<int> new_neighbors;
+    // Get main and secondary columns from distance array
+    Eigen::VectorXd main_col = distance_arr.col(main_cluster->id);
+    Eigen::VectorXd secondary_col = distance_arr.col(secondary_cluster->id);
 
-    std::vector<int> static_neighbors;
-    static_neighbors.reserve(main_cluster->neighbors.size() + secondary_cluster->neighbors.size());
 
-    std::vector<int> merging_neighbors;
-    merging_neighbors.reserve(main_cluster->neighbors.size() + secondary_cluster->neighbors.size());
-
-    for (auto& id : main_cluster->neighbors) {
-        if (id != main_cluster->id && id != secondary_cluster->id) {
-            int smallest_id = id < clusters[id]->nn ? id : clusters[id]->nn;
-            if (clusters[id]->will_merge) {
-                if (merging_array[smallest_id] != 1) {
-                    merging_array[smallest_id] = 1;
-                    merging_neighbors.push_back(smallest_id);
-                }
-            } else {
-                merging_array[id] = 1;
-                static_neighbors.push_back(id);
-            }
-        }
-    }
-
-    for (auto& id : secondary_cluster->neighbors) {
-        if (id != main_cluster->id && id != secondary_cluster->id) {
-            int smallest_id = id < clusters[id]->nn ? id : clusters[id]->nn;
-
-            if (clusters[id]->will_merge) {
-                if (merging_array[smallest_id] == 0) {
-                    merging_array[smallest_id] = 1;
-                    merging_neighbors.push_back(smallest_id);
-                }
-            } else {
-                if (merging_array[id] == 0) {
-                    static_neighbors.push_back(id);
-                }
-
-                ++merging_array[id];
-            }
-        }
-    }
-
-    std::vector<std::tuple<int, int, double> > needs_update;
-    for (auto& static_id : static_neighbors) {
-        double primary_dist = distance_arr(main_cluster->id, static_id);
-        double secondary_dist = distance_arr(secondary_cluster->id, static_id);
-
-        double avg_dist = (main_cluster->indices.size() * primary_dist + secondary_cluster->indices.size() * secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
-
-        distance_arr(main_cluster->id, static_id) = avg_dist;
-        if (avg_dist < max_merge_distance) {
-            new_neighbors.push_back(static_id);
+    // Loop through merges and change main_col vals
+    for (auto& merge : merges) {
+        if (merge.first == main_cluster->id || merge.second == main_cluster->id) {
+            continue;
         }
 
-        needs_update.push_back(std::make_tuple(main_cluster->id, static_id, avg_dist));
+        int merge_main = merge.first;
+        int merge_secondary = merge.second;
 
-        merging_array[static_id] = 0;
+        int merge_main_size = clusters[merge_main]->indices.size();
+        int merge_secondary_size = clusters[merge_secondary]->indices.size();
+
+        main_col[merge_main] = (merge_main_size * main_col[merge_main] + merge_secondary_size * main_col[merge_secondary]) / (merge_main_size + merge_secondary_size);
+        main_col[merge_secondary] = main_col[merge_main];
+
+        secondary_col[merge_main] = (merge_main_size * secondary_col[merge_main] + merge_secondary_size * secondary_col[merge_secondary]) / (merge_main_size + merge_secondary_size);
+        secondary_col[merge_secondary] = secondary_col[merge_main];
     }
 
-    for (auto& merging_id : merging_neighbors) {
-        double main_primary_dist = distance_arr(main_cluster->id, merging_id); 
-        double main_secondary_dist = distance_arr(secondary_cluster->id, merging_id);
-        double main_avg_dist = (main_cluster->indices.size() * main_primary_dist + secondary_cluster->indices.size() * main_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+    int main_size = main_cluster->indices.size();
+    int secondary_size = secondary_cluster->indices.size();
 
-        int secondary_merging_id = clusters[merging_id]->nn;
-        double secondary_primary_dist = distance_arr(main_cluster->id, secondary_merging_id);
-        double secondary_secondary_dist = distance_arr(secondary_cluster->id, secondary_merging_id);
-        double secondary_avg_dist = (main_cluster->indices.size() * secondary_primary_dist + secondary_cluster->indices.size() * secondary_secondary_dist) / (main_cluster->indices.size() + secondary_cluster->indices.size());
+    // average main_col and secndary_col
+    Eigen::VectorXd avg_col = (main_size * main_col + secondary_size * secondary_col) / (main_size + secondary_size);
+    avg_col[secondary_cluster->id] = std::numeric_limits<double>::infinity();
 
-        double avg_dist = (clusters[merging_id]->indices.size() * main_avg_dist + clusters[secondary_merging_id]->indices.size() * secondary_avg_dist) / (clusters[merging_id]->indices.size() + clusters[secondary_merging_id]->indices.size());
+    // Swap main and secondary columns for avg col
+    distance_arr.col(main_cluster->id) = avg_col;
 
-        if (avg_dist < max_merge_distance) {
-            distance_arr(main_cluster->id, merging_id) = avg_dist;
-            new_neighbors.push_back(merging_id);
-        }
+    // Set secondary column to infinity
+    // distance_arr.col(secondary_cluster->id) = Eigen::VectorXd::Constant(clusters.size(), std::numeric_limits<double>::infinity());
 
-        merging_array[merging_id] = 0;
-    }
-
-    main_cluster->neighbors = new_neighbors;
-    main_cluster->neighbors_needing_updates = needs_update;
+    main_cluster->indices.insert(main_cluster->indices.end(), secondary_cluster->indices.begin(), secondary_cluster->indices.end());
 }
 
 void merge_cluster_symmetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array) {
+    std::vector<std::pair<int, double>>& merging_array) {
 
     Cluster* main_cluster = clusters[merge.first];
     Cluster* secondary_cluster = clusters[merge.second];
 
-    std::vector<int> new_neighbors;
-    std::unordered_map<int, double> new_dissimilarities;
-    std::vector<std::tuple<int, int, double> > needs_update;
+    std::vector<std::pair<int, double>> new_neighbors;
+    std::vector<std::tuple<int, int, double>> needs_update;
+    std::vector<int> unique_neighbors;
 
-    std::vector<int> static_neighbors;
-    std::vector<int> merging_neighbors;
-    std::tie(static_neighbors, merging_neighbors) = split_neighbors(main_cluster, secondary_cluster, clusters, merging_array);
+    // First loop through main neighbors
+    for (auto& neighbor : main_cluster->neighbor_distances) {
+        if (neighbor.first == main_cluster->id || neighbor.first == secondary_cluster->id) {
+            continue;
+        }
 
-    for (auto& id : static_neighbors) {
-        double main_dist = 0.0;
-        double secondary_dist = 0.0;
+        merging_array[neighbor.first].first = main_cluster->id + 1;
+        if (clusters[neighbor.first]->will_merge) {
+            merging_array[neighbor.first].second = (clusters[neighbor.first]->indices.size() + main_cluster->indices.size()) * neighbor.second;
+        } else {
+            merging_array[neighbor.first].second = main_cluster->indices.size() * neighbor.second;
+        }
 
-        // Using merging array to minimize map lookups
-        if (merging_array[id] > 1) { // Both clusters share this neighbor
-            main_dist = main_cluster->dissimilarities[id];
-            secondary_dist = secondary_cluster->dissimilarities[id];
-        } else { // only one cluster has this neighbor
-            if (main_cluster->dissimilarities.find(id) != main_cluster->dissimilarities.end()) {
-                main_dist = main_cluster->dissimilarities[id];
-                secondary_dist = main_dist;
+        unique_neighbors.push_back(neighbor.first);
+    }
+
+    // Then loop through secondary neighbors
+    for (auto& neighbor : secondary_cluster->neighbor_distances) {
+        if (neighbor.first == main_cluster->id || neighbor.first == secondary_cluster->id) {
+            continue;
+        }
+
+        if (merging_array[neighbor.first].first <= 0) {
+            unique_neighbors.push_back(neighbor.first);
+        }
+
+        if (clusters[neighbor.first]->will_merge) {
+            if (merging_array[neighbor.first].first == main_cluster->id + 1) {
+                merging_array[neighbor.first].second += (clusters[neighbor.first]->indices.size() + secondary_cluster->indices.size()) * neighbor.second;
             } else {
-                secondary_dist = secondary_cluster->dissimilarities[id];
-                main_dist = secondary_dist;
+                merging_array[neighbor.first].second = (clusters[neighbor.first]->indices.size() + secondary_cluster->indices.size()) * neighbor.second;
+            }
+
+        } else {
+            if (merging_array[neighbor.first].first == main_cluster->id + 1) {
+                int indices_sum = main_cluster->indices.size() + secondary_cluster->indices.size();
+                // std::cout << "saved distance: " << merging_array[neighbor.first].second << std::endl;
+                merging_array[neighbor.first].second = (merging_array[neighbor.first].second + secondary_cluster->indices.size() * neighbor.second) / indices_sum;
+            } else {
+                merging_array[neighbor.first].second = neighbor.second;
             }
         }
-
-        int no_main = main_cluster->indices.size();
-        int no_secondary = secondary_cluster->indices.size();
-        double new_dist = (main_dist * no_main + secondary_dist * no_secondary) / (no_main + no_secondary); 
-
-        new_neighbors.push_back(id);
-        new_dissimilarities[id] = new_dist;
-        merging_array[id] = 0;
-
-        needs_update.push_back(std::make_tuple(main_cluster->id, id, new_dist));
+        merging_array[neighbor.first].first += secondary_cluster->id + 1;
     }
 
-    for (auto& id : merging_neighbors) {
-        // First focus on other
-        double main_other_dist = 0.0;
-        double secondary_other_dist = 0.0;
-
-        std::vector<double> weighted_dists;
-        std::vector<int> weighted_no;
-
-        Cluster* other_cluster = clusters[id];
-
-        bool main_has_other = main_cluster->dissimilarities.find(id) != main_cluster->dissimilarities.end();
-        bool secondary_has_other = secondary_cluster->dissimilarities.find(id) != secondary_cluster->dissimilarities.end();
-
-        if (main_has_other) {
-            main_other_dist = main_cluster->dissimilarities[id];
-            weighted_dists.push_back(main_other_dist * (main_cluster->indices.size() + other_cluster->indices.size()));
-            weighted_no.push_back(main_cluster->indices.size() + other_cluster->indices.size());
+    // std::cout << "Unique neighbors: " << std::endl;
+    for (auto& neighbor_id : unique_neighbors) {
+        // std::cout << "Neighbor: " << neighbor_id << std::endl;
+        if (!clusters[neighbor_id]->will_merge) {
+            double new_dist = merging_array[neighbor_id].second; 
+            if (merging_array[neighbor_id].first == main_cluster->id + 1) {
+                new_dist = new_dist / main_cluster->indices.size();
+            }
+            new_neighbors.push_back(std::make_pair(neighbor_id, new_dist));
+            needs_update.push_back(std::make_tuple(main_cluster->id, neighbor_id, new_dist));
+            merging_array[neighbor_id].first = 0;
+            merging_array[neighbor_id].second = 0.0;
+            continue;
         }
 
-        if (secondary_has_other) {
-            secondary_other_dist = secondary_cluster->dissimilarities[id];
-            weighted_dists.push_back(secondary_other_dist * (secondary_cluster->indices.size() + other_cluster->indices.size()));
-            weighted_no.push_back(secondary_cluster->indices.size() + other_cluster->indices.size());
+        if (clusters[neighbor_id]->will_merge && 
+        (merging_array[neighbor_id].first == -1 || merging_array[clusters[neighbor_id]->nn].first == -1)) {
+            int min_id = std::min(clusters[neighbor_id]->nn, neighbor_id);
+            merging_array[min_id].first = 0;
+            merging_array[min_id].second = 0.0;
+            continue;
         }
 
-        int nn = clusters[id]->nn;
-        double main_nn_dist = 0.0;
-        double secondary_nn_dist = 0.0;
+        int nn_id = clusters[neighbor_id]->nn;
+        double total = merging_array[neighbor_id].second + merging_array[nn_id].second;
+        double denominator = 0.0;
 
-        bool main_has_nn = main_cluster->dissimilarities.find(nn) != main_cluster->dissimilarities.end();
-        bool secondary_has_nn = secondary_cluster->dissimilarities.find(nn) != secondary_cluster->dissimilarities.end();
+        if (merging_array[neighbor_id].first == main_cluster->id + secondary_cluster->id + 2) {
+            denominator = main_cluster->indices.size() + secondary_cluster->indices.size() + clusters[neighbor_id]->indices.size() * 2;
 
-        if (main_has_nn) {
-            main_nn_dist = main_cluster->dissimilarities[nn];
-            weighted_dists.push_back(main_nn_dist * (main_cluster->indices.size() + clusters[nn]->indices.size()));
-            weighted_no.push_back(main_cluster->indices.size() + clusters[nn]->indices.size());
+        } else if (merging_array[neighbor_id].first == main_cluster->id + 1) {
+            denominator = main_cluster->indices.size() + clusters[neighbor_id]->indices.size();
+
+        } else if (merging_array[neighbor_id].first == secondary_cluster->id + 1) {
+            denominator = secondary_cluster->indices.size() + clusters[neighbor_id]->indices.size();
         }
 
-        if (secondary_has_nn) {
-            secondary_nn_dist = secondary_cluster->dissimilarities[nn];
-            weighted_dists.push_back(secondary_nn_dist * (secondary_cluster->indices.size() + clusters[nn]->indices.size()));
-            weighted_no.push_back(secondary_cluster->indices.size() + clusters[nn]->indices.size());
+        if (merging_array[nn_id].first == main_cluster->id + secondary_cluster->id + 2) {
+            denominator += main_cluster->indices.size() + secondary_cluster->indices.size() + clusters[nn_id]->indices.size() * 2;
+
+        } else if (merging_array[nn_id].first == main_cluster->id + 1) {
+            denominator += main_cluster->indices.size() + clusters[nn_id]->indices.size();
+
+        } else if (merging_array[nn_id].first == secondary_cluster->id + 1) {
+            denominator += secondary_cluster->indices.size() + clusters[nn_id]->indices.size();
         }
 
-        double merge_dist = std::accumulate(weighted_dists.begin(), weighted_dists.end(), 0.0) / std::accumulate(weighted_no.begin(), weighted_no.end(), 0.0);
+        double avg_dist = total / denominator;
+        int smallest_id = std::min(neighbor_id, nn_id);
+        new_neighbors.push_back(std::make_pair(smallest_id, avg_dist));
 
-        new_neighbors.push_back(id);
-        new_dissimilarities[id] = merge_dist;
-        merging_array[id] = 0; 
+        merging_array[neighbor_id].first = 0;
+        merging_array[neighbor_id].second = 0.0;
+        if (merging_array[nn_id].first != 0) { // nn is in unique neighbors
+            merging_array[nn_id].first = 0;
+            merging_array[nn_id].second = 0.0;
+            merging_array[smallest_id].first = -1;
+        }
     }
+    // std::cout << "Merging array for merge" << merge.first << " " << merge.second << std::endl;
+    // for (int i=0; i<merging_array.size(); ++i) {
+    //     std::cout << merging_array[i].first << " " << merging_array[i].second << std::endl;
+    // }
+    // std::cout << "-----------------" << std::endl;
 
-    main_cluster->neighbors = new_neighbors;
-    main_cluster->dissimilarities = new_dissimilarities;
+    // // print out new neighbors
+    // for (auto& neighbor :new_neighbors) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
+
+    // std::cout << "-----------------" << std::endl;
+    // // print out old neighbors
+    // for (auto& neighbor : main_cluster->neighbor_distances) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
+
+    // std::cout << "-----------------" << std::endl;
+    // for (auto& neighbor : secondary_cluster->neighbor_distances) {
+    //     std::cout << neighbor.first << " " << neighbor.second << std::endl;
+    // }
+
+    main_cluster->neighbor_distances = new_neighbors;
     main_cluster->neighbors_needing_updates = needs_update;
+
+
+    // print out neighbors needing updates
+    // for (auto& neighbor : needs_update) {
+    //     std::cout << std::get<1>(neighbor) << " " << std::get<2>(neighbor) << std::endl;
+    // }
 }
 
 // Computes missing edges on the fly for a more balanced tree
@@ -776,7 +800,7 @@ void merge_cluster_compute_linkage(
 void merge_clusters_symmetric(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array) {
+    std::vector<std::pair<int, double>>& merging_array) {
     
     for (auto& merge : merges) {
         merge_cluster_symmetric_linkage(merge, clusters, merging_array);
@@ -795,12 +819,11 @@ void merge_clusters_compute(
 
 void merge_clusters_full(
     std::vector<std::pair<int, int> >& merges,
+    std::vector<std::pair<int, int> >& full_merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array,
-    Eigen::MatrixXd& distance_arr,
-    double max_merge_distance) {
+    Eigen::MatrixXd& distance_arr) {
     for (std::pair<int, int> merge : merges) {
-        merge_cluster_full(merge, clusters, merging_array, distance_arr, max_merge_distance);
+        merge_cluster_full(merge, full_merges, clusters, distance_arr);
     }
 }
 
@@ -831,7 +854,7 @@ void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges, 
     std::vector<Cluster*>& clusters,
     size_t no_threads,
-    std::vector<std::vector<int>>& merging_arrays) {
+    std::vector<std::vector<std::pair<int, double>>>& merging_arrays) {
     
     std::vector<std::thread> threads;
 
@@ -885,9 +908,7 @@ void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
     Eigen::MatrixXd& distance_arr,
     std::vector<Cluster*>& clusters,
-    size_t no_threads,
-    double max_merge_distance,
-    std::vector<std::vector<int>>& merging_arrays) {
+    size_t no_threads) {
 
     std::vector<std::thread> threads;
 
@@ -898,10 +919,9 @@ void parallel_merge_clusters(
         std::thread merge_thread = std::thread(
             merge_clusters_full,
             std::ref(merge_chunks[i]),
+            std::ref(merges),
             std::ref(clusters),
-            std::ref(merging_arrays[i]),
-            std::ref(distance_arr),
-            max_merge_distance);
+            std::ref(distance_arr));
 
         threads.push_back(std::move(merge_thread));
     }
@@ -914,113 +934,96 @@ void parallel_merge_clusters(
 
 //-----------------------Updating Nearest Neighbors-----------------------------------
 
-void update_cluster_neighbors(
+void update_cluster_neighbors( 
     std::pair<int, std::vector<std::pair<int, double> > >& update_chunk,
     std::vector<Cluster*>& clusters,
     std::vector<int>& update_neighbors) {
     Cluster* other_cluster = clusters[update_chunk.first];
+    // Need to make sure that this is keeping sorting garunteed
+    // std::cout << "Updating cluster: " << other_cluster->id << std::endl;
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // Update chunk is not gaunteed to be sorted
+    int no_updates = update_chunk.second.size();
+    int no_neighbors = other_cluster->neighbor_distances.size();
+    // UPDATE_PERCENTAGES.push_back((double)no_updates / (double)no_neighbors);
 
-    std::vector<int> new_neighbors;
+    std::vector<std::pair<int, double>> new_neighbors;
     std::vector<int> all_looped_neighbors;
     for (size_t i=0; i<update_chunk.second.size(); i++) {
         int neighbor_id = update_chunk.second[i].first;
         int neighbor_nn_id = clusters[neighbor_id]->nn;
         double dissimilarity = update_chunk.second[i].second;
 
+        std::cout << "Cluster ID: " << other_cluster->id;
+        std::cout << " Neighbor ID: " << neighbor_id;
+        std::cout << " Neighbor NN ID: " << neighbor_nn_id;
+        std::cout << " Dissimilarity: " << dissimilarity << std::endl;
+
         update_neighbors[neighbor_id] = 1;
         update_neighbors[neighbor_nn_id] = -1;
 
-        other_cluster->dissimilarities[neighbor_id] = dissimilarity;
-        if (dissimilarity >= 0) {
-            new_neighbors.push_back(neighbor_id);
+        if (dissimilarity >= 0) { // Why would it be less than 0?
+            new_neighbors.push_back(std::make_pair(neighbor_id, dissimilarity));
         }
 
         all_looped_neighbors.push_back(neighbor_id);
         all_looped_neighbors.push_back(neighbor_nn_id);
     }
 
-    for (size_t i=0; i<other_cluster->neighbors.size(); i++) {
-        int neighbor_id = other_cluster->neighbors[i];
+    for (size_t i=0; i<other_cluster->neighbor_distances.size(); i++) {
+        int neighbor_id = other_cluster->neighbor_distances[i].first;
         if (update_neighbors[neighbor_id] == 0) {
-            new_neighbors.push_back(neighbor_id);
+            new_neighbors.push_back(other_cluster->neighbor_distances[i]);
+            all_looped_neighbors.push_back(neighbor_id); // Moving this in here to avoid duplicates
         }
-        all_looped_neighbors.push_back(neighbor_id);
     }
 
     for (size_t i=0; i<all_looped_neighbors.size(); i++) {
         update_neighbors[all_looped_neighbors[i]] = 0;
     }
 
-    other_cluster->neighbors = new_neighbors;
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    UPDATE_NEIGHBOR_DURATIONS.push_back(duration);
+    other_cluster->neighbor_distances = new_neighbors;
 }
 
 void update_cluster_neighbors(
-    std::pair<int, std::vector<std::pair<int, double> > >& update_chunk,
-    std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    double max_merge_distance,
-    std::vector<int>& update_neighbors) {
-    Cluster* other_cluster = clusters[update_chunk.first];
+    std::vector<std::pair<int, int>> merges
+) {
+    // copy merges columns to rows in distance_arr
+    for (size_t i=0; i<merges.size(); i++) {
+        int cluster_id = merges[i].first;
 
-    std::vector<int> new_neighbors;
-    std::vector<int> all_looped_neighbors;
-    for (size_t i=0; i<update_chunk.second.size(); i++) {
-        int neighbor_id = update_chunk.second[i].first;
-        int neighbor_nn_id = clusters[neighbor_id]->nn;
-        double dissimilarity = update_chunk.second[i].second;
-        
-
-        update_neighbors[neighbor_id] = 1;
-        update_neighbors[neighbor_nn_id] = -1;
-
-        distance_arr(other_cluster->id, neighbor_id) = dissimilarity;
-        if (dissimilarity < max_merge_distance) {
-            new_neighbors.push_back(neighbor_id);
-        } 
-
-        all_looped_neighbors.push_back(neighbor_id);
-        all_looped_neighbors.push_back(neighbor_nn_id);
+        distance_arr.row(cluster_id) = distance_arr.col(cluster_id);
     }
 
-    for (size_t i=0; i<other_cluster->neighbors.size(); i++) {
-        int neighbor_id = other_cluster->neighbors[i];
-        if (update_neighbors[neighbor_id] == 0) {
-            new_neighbors.push_back(neighbor_id);
-        }
-        all_looped_neighbors.push_back(neighbor_id);
-    }
+    for (size_t i=0; i<merges.size(); i++) {
+        int cluster_id = merges[i].second;
 
-    // Clear array and find NN
-    for (size_t i=0; i<all_looped_neighbors.size(); i++) {
-        update_neighbors[all_looped_neighbors[i]] = 0;
+        distance_arr.col(cluster_id) = Eigen::VectorXd::Constant(distance_arr.cols(), std::numeric_limits<double>::infinity());
+        distance_arr.row(cluster_id) = distance_arr.col(cluster_id);
     }
-
-    other_cluster->neighbors = new_neighbors;
 }
 
 void update_cluster_neighbors_p(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters, 
+    std::vector<int>& neighbor_sort_arr,
     std::vector<int>& update_neighbors) {
     for (auto& update: updates) {
         update_cluster_neighbors(update, clusters, update_neighbors);
+        neighbor_sort_arr[update.first] = -1;
     }
 }   
 
 void parallel_update_clusters(
-    std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
+    std::vector<std::pair<int, std::vector<std::pair<int, double>>>>& updates,
     std::vector<Cluster*>& clusters,
-    size_t no_threads, 
-    std::vector<int>& update_neighbors) {
+    std::vector<std::vector<int>>& update_neighbors_arrays,
+    std::vector<int>& neighbor_sort_arr,
+    size_t no_threads) {
 
     std::vector<std::thread> threads;
-    std::vector<std::vector<std::pair<int, std::vector<std::pair<int, double> > > > > update_chunks(no_threads);
+    std::vector<std::vector<std::pair<int, std::vector<std::pair<int, double>>>>> update_chunks(no_threads);
 
     size_t chunk_size = updates.size() / no_threads;
     size_t remainder = updates.size() % no_threads; 
@@ -1043,7 +1046,8 @@ void parallel_update_clusters(
             update_cluster_neighbors_p,
             std::ref(update_chunks[i]),
             std::ref(clusters),
-            std::ref(update_neighbors));
+            std::ref(neighbor_sort_arr),
+            std::ref(update_neighbors_arrays[i]));
 
         threads.push_back(std::move(update_thread));
     }
@@ -1055,19 +1059,15 @@ void parallel_update_clusters(
 
 void update_cluster_nn(
     std::vector<Cluster*>& clusters,
-    double max_merge_distance) {
+    double max_merge_distance,
+    std::vector<int>& nn_count) {
     for (Cluster* cluster : clusters) {
-        if (cluster == nullptr) {
-            continue;
-        }
-
-        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
-            cluster->update_nn(max_merge_distance);
-        }
+        cluster->update_nn(max_merge_distance);
+        nn_count[cluster->id] = 0;
     }
 }
 
-void update_cluster_nn(
+void update_cluster_nn_dist(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
     double max_merge_distance) {
@@ -1077,8 +1077,70 @@ void update_cluster_nn(
         }
 
         if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
-            cluster->update_nn(distance_arr);
+            cluster->update_nn(distance_arr, max_merge_distance);
         }
+    }
+}
+
+std::vector<Cluster*> get_unique_nn(std::vector<Cluster*>& clusters, std::vector<int>& nn_count) {
+    std::vector<Cluster*> unique_nn;
+    for (Cluster* cluster : clusters) {
+        if (cluster == nullptr) {
+            continue;
+        }
+
+        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
+            if (nn_count[cluster->id] == 0) {
+                unique_nn.push_back(cluster);
+                nn_count[cluster->id]++;
+            }
+        }
+    }
+
+    return unique_nn;
+}
+
+
+void paralell_update_cluster_nn(
+    std::vector<Cluster*>& clusters,
+    double max_merge_distance,
+    size_t no_threads) {
+
+    // Get unique nn
+    static std::vector<int> nn_count = std::vector<int>(clusters.size(), 0);
+    std::vector<Cluster*> unique_nn = get_unique_nn(clusters, nn_count);
+
+    std::vector<std::thread> threads;
+    std::vector<std::vector<Cluster*>> cluster_chunks(no_threads);
+
+    size_t chunk_size = unique_nn.size() / no_threads;
+    size_t remainder = unique_nn.size() % no_threads; 
+
+    size_t start = 0, end = 0;
+    for (size_t i = 0; i < no_threads; i++) {
+        end = start + chunk_size;
+        if (i < remainder) {
+            end++;
+        }
+
+        if (end <= unique_nn.size()) {
+            cluster_chunks[i] = std::vector<Cluster*>(unique_nn.begin() + start, unique_nn.begin() + end);
+        }
+        start = end;
+    }
+
+    for (size_t i=0; i<no_threads; i++) {
+        std::thread update_thread = std::thread(
+            update_cluster_nn,
+            std::ref(cluster_chunks[i]),
+            max_merge_distance,
+            std::ref(nn_count));
+
+        threads.push_back(std::move(update_thread));
+    }
+
+    for (size_t i=0; i<no_threads; i++) {
+        threads[i].join();
     }
 }
 
@@ -1096,13 +1158,14 @@ std::vector<std::pair<int, int> > find_reciprocal_nn(std::vector<Cluster*>& clus
             cluster->will_merge = (clusters[cluster->nn]->nn == cluster->id);
         }
 
-        if (cluster -> will_merge && cluster->id < cluster->nn) {
+        if (cluster->will_merge && cluster->id < cluster->nn) {
             reciprocal_nn.push_back(std::make_pair(cluster->id, cluster->nn));
         }
     }
 
     return reciprocal_nn;
 }
+
 //-----------------------End Updating Nearest Neighbors-----------------------------------
 
 //--------------------------------------RAC Functions--------------------------------------
@@ -1113,13 +1176,18 @@ void RAC_i(
 
     std::vector<std::pair<int, int>> merges = find_reciprocal_nn(clusters);
     while (merges.size() != 0) {
+        //print merges
+        // std::cout << vectorToString(merges) << std::endl;
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS);
 
-        update_cluster_nn(clusters, max_merge_distance);
+        auto start = std::chrono::high_resolution_clock::now();
+        paralell_update_cluster_nn(clusters, max_merge_distance, NO_PROCESSORS);
 
         remove_secondary_clusters(merges, clusters);
 
         merges = find_reciprocal_nn(clusters);
+        auto end = std::chrono::high_resolution_clock::now();
+        UPDATE_NN_DURATIONS.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     }
 }
 
@@ -1133,7 +1201,7 @@ void RAC_i(
     while (merges.size() != 0) {
         update_cluster_dissimilarities(merges, clusters, NO_PROCESSORS, base_arr);
 
-        update_cluster_nn(clusters, max_merge_distance);
+        // update_cluster_nn(clusters, max_merge_distance);
 
         remove_secondary_clusters(merges, clusters);
 
@@ -1149,9 +1217,11 @@ void RAC_i(
 
     std::vector<std::pair<int, int>> merges = find_reciprocal_nn(clusters);
     while (merges.size() != 0) {
-        update_cluster_dissimilarities(merges, clusters, distance_arr, max_merge_distance, NO_PROCESSORS);
+        // std::cout << vectorToString(merges) << std::endl;
+        update_cluster_dissimilarities(merges, clusters, distance_arr, NO_PROCESSORS);
+        // std::cout << distance_arr << std::endl;
 
-        update_cluster_nn(clusters, distance_arr, max_merge_distance);
+        update_cluster_nn_dist(clusters, distance_arr, max_merge_distance);
 
         remove_secondary_clusters(merges, clusters);
 
@@ -1182,6 +1252,13 @@ std::vector<int> RAC(
 
     base_arr = base_arr.transpose().colwise().normalized().eval();
 
+    // std::vector<int> cluster_one = {1, 4, 5};
+    // std::vector<int> cluster_two = {0, 3};
+
+    //print out mean
+    // Eigen::MatrixXd result = pairwise_cosine(base_arr(Eigen::all, cluster_one), base_arr(Eigen::all, cluster_two));
+    // std::cout << "Mean: " << result.mean() << std::endl;
+
     Eigen::setNbThreads(NO_PROCESSORS);
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -1192,15 +1269,24 @@ std::vector<int> RAC(
     }
     Eigen::MatrixXd distance_arr;
 
-    if (connectivity.size() != 0) {
+    if (connectivity_type == "symmetric" || connectivity_type == "compute") {
         calculate_initial_dissimilarities(base_arr, clusters, connectivity, max_merge_distance, BATCHSIZE);
     } else {
         distance_arr = calculate_initial_dissimilarities(base_arr, clusters, max_merge_distance);
-    }
+        // std::cout << "Distance Arr: \n" << distance_arr << std::endl;
+    } 
+
+    // deallocate base array
+    // base_arr.resize(0,0);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     std::cout << "Time taken to calculate initial dissimilarities: " << duration << "ms" << std::endl;
+
+    // Output sum of initial neighbor durations
+    std::cout << "Sum of initial neighbor durations: " << std::accumulate(INITIAL_NEIGHBOR_DURATIONS.begin(), INITIAL_NEIGHBOR_DURATIONS.end(), 0) /1000 << "ms" << std::endl;
+
+    // Output sum of merge durations
 
     start = std::chrono::high_resolution_clock::now();
     if (connectivity_type == "full") {
@@ -1210,6 +1296,20 @@ std::vector<int> RAC(
     } else { // Connctivity_type is "symmetric"
         RAC_i(clusters, max_merge_distance, NO_PROCESSORS); 
     }
+
+    std::cout << "Sum of merge durations: " << std::accumulate(MERGE_DURATIONS.begin(), MERGE_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of update neighbor durations
+    std::cout << "Sum of update neighbor durations: " << std::accumulate(UPDATE_NEIGHBOR_DURATIONS.begin(), UPDATE_NEIGHBOR_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of update nn durations
+    std::cout << "Sum of update nn durations: " << std::accumulate(UPDATE_NN_DURATIONS.begin(), UPDATE_NN_DURATIONS.end(), 0) << "ms" << std::endl;
+
+    // sum of hash durations
+    std::cout << "Sum of hash durations: " << std::accumulate(HASH_DURATIONS.begin(), HASH_DURATIONS.end(), 0.0) / 1000 << "ms" << std::endl;
+
+    // average of update percentages
+    std::cout << "Average of update percentages: " << std::accumulate(UPDATE_PERCENTAGES.begin(), UPDATE_PERCENTAGES.end(), 0.0) / UPDATE_PERCENTAGES.size() << std::endl;
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

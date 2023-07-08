@@ -17,6 +17,9 @@ std::vector<long> COSINE_DURATIONS;
 std::vector<long> INDICES_DURATIONS;
 std::vector<long> MERGE_DURATIONS;
 std::vector<long> MISC_MERGE_DURATIONS;
+std::vector<long> INITIAL_NEIGHBOR_DURATIONS;
+std::vector<long> HASH_DURATIONS;
+std::vector<double> UPDATE_PERCENTAGES;
 
 #endif // GLOBAL_TIMING_VARS_H
 
@@ -28,6 +31,7 @@ public:
     int id;
     bool will_merge;
     int nn;
+    std::vector<std::pair<int, double>> neighbor_distances;
     std::vector<int> neighbors;
     std::vector<int> indices;
     std::unordered_map<int, double> dissimilarities;
@@ -36,7 +40,7 @@ public:
     Cluster(int id);
 
     void update_nn(double max_merge_distance);
-    void update_nn(Eigen::MatrixXd& distance_arr);
+    void update_nn(Eigen::MatrixXd& distance_arr, double max_merge_distance);
 };
 
 #endif //CLUSTER_H
@@ -79,7 +83,6 @@ void update_cluster_dissimilarities(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    double max_merge_distance,
     const int NO_PROCESSORS);
 
 Eigen::MatrixXd calculate_initial_dissimilarities(
@@ -99,10 +102,9 @@ void calculate_initial_dissimilarities(
 //-----------------------Merging Functions-----------------------------------
 void merge_cluster_full(
     std::pair<int, int>& merge,
+    std::vector<std::pair<int, int>>& merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array,
-    Eigen::MatrixXd& distance_arr,
-    double max_merge_distance);
+    Eigen::MatrixXd& distance_arr);
 
 void merge_cluster_compute_linkage(
     std::pair<int, int>& merge,
@@ -113,7 +115,7 @@ void merge_cluster_compute_linkage(
 void merge_cluster_symmetric_linkage(
     std::pair<int, int>& merge,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array);
+    std::vector<std::pair<int, double>>& merging_array);
 
 void merge_clusters_compute(
     std::vector<std::pair<int, int> >& merges,
@@ -123,15 +125,14 @@ void merge_clusters_compute(
 
 void merge_clusters_full(
     std::vector<std::pair<int, int> >& merges,
+    std::vector<std::pair<int, int> >& full_merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array,
-    Eigen::MatrixXd& distance_arr,
-    double max_merge_distance);
+    Eigen::MatrixXd& distance_arr);
 
 void merge_clusters_symmetric(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
-    std::vector<int>& merging_array);
+    std::vector<std::pair<int, double>>& merging_array);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges, 
@@ -144,15 +145,13 @@ void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
     std::vector<Cluster*>& clusters,
     size_t no_threads,
-    std::vector<std::vector<int>>& merging_arrays);
+    std::vector<std::vector<std::pair<int, double>>>& merging_arrays);
 
 void parallel_merge_clusters(
     std::vector<std::pair<int, int> >& merges,
     Eigen::MatrixXd& distance_arr,
     std::vector<Cluster*>& clusters,
-    size_t no_threads,
-    double max_merge_distance,
-    std::vector<std::vector<int>>& merging_arrays);
+    size_t no_threads);
 //-----------------------End Merging Functions-----------------------------------
 
 //-----------------------Updating Nearest Neighbors-----------------------------------
@@ -163,24 +162,28 @@ void update_cluster_neighbors(
     std::vector<int>& update_neighbors);
 
 void update_cluster_neighbors(
-    std::pair<int, std::vector<std::pair<int, double> > >& update_chunk,
-    std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
-    double max_merge_distance,
-    std::vector<int>& update_neighbors);
+    std::vector<std::pair<int, int>> merges);
 
 void update_cluster_neighbors_p(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters, 
+    std::vector<int>& neighbor_sort_arr,
     std::vector<int>& update_neighbors);
 
 void parallel_update_clusters(
     std::vector<std::pair<int, std::vector<std::pair<int, double> > > >& updates,
     std::vector<Cluster*>& clusters,
-    size_t no_threads, 
-    std::vector<int>& update_neighbors);
+    std::vector<std::vector<int>>& update_neighbors_arrays,
+    std::vector<int>& neighbor_sort_arr,
+    size_t no_threads);
 
 void update_cluster_nn(
+    std::vector<Cluster*>& clusters,
+    double min_disitance,
+    std::vector<int>& nn_count);
+
+void update_cluster_nn_dist(
     std::vector<Cluster*>& clusters,
     Eigen::MatrixXd& distance_arr,
     double min_disitance);
