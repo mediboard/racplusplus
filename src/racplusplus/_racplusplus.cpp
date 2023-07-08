@@ -539,6 +539,7 @@ void merge_cluster_full(
     Eigen::VectorXd main_col = distance_arr.col(main_cluster->id);
     Eigen::VectorXd secondary_col = distance_arr.col(secondary_cluster->id);
 
+
     // Loop through merges and change main_col vals
     for (auto& merge : merges) {
         if (merge.first == main_cluster->id || merge.second == main_cluster->id) {
@@ -563,12 +564,15 @@ void merge_cluster_full(
 
     // average main_col and secndary_col
     Eigen::VectorXd avg_col = (main_size * main_col + secondary_size * secondary_col) / (main_size + secondary_size);
+    avg_col[secondary_cluster->id] = std::numeric_limits<double>::infinity();
 
     // Swap main and secondary columns for avg col
     distance_arr.col(main_cluster->id) = avg_col;
 
     // Set secondary column to infinity
-    distance_arr.col(secondary_cluster->id) = Eigen::VectorXd::Constant(clusters.size(), std::numeric_limits<double>::infinity());
+    // distance_arr.col(secondary_cluster->id) = Eigen::VectorXd::Constant(clusters.size(), std::numeric_limits<double>::infinity());
+
+    main_cluster->indices.insert(main_cluster->indices.end(), secondary_cluster->indices.begin(), secondary_cluster->indices.end());
 }
 
 void merge_cluster_symetric_linkage(
@@ -976,10 +980,15 @@ void update_cluster_neighbors(
     // copy merges columns to rows in distance_arr
     for (size_t i=0; i<merges.size(); i++) {
         int cluster_id = merges[i].first;
-        int merge_id = merges[i].second;
 
         distance_arr.row(cluster_id) = distance_arr.col(cluster_id);
-        distance_arr.row(merge_id) = distance_arr.col(merge_id);
+    }
+
+    for (size_t i=0; i<merges.size(); i++) {
+        int cluster_id = merges[i].second;
+
+        distance_arr.col(cluster_id) = Eigen::VectorXd::Constant(distance_arr.cols(), std::numeric_limits<double>::infinity());
+        distance_arr.row(cluster_id) = distance_arr.col(cluster_id);
     }
 }
 
@@ -1196,8 +1205,9 @@ void RAC_i(
 
     std::vector<std::pair<int, int>> merges = find_reciprocal_nn(clusters);
     while (merges.size() != 0) {
-        std::cout << vectorToString(merges) << std::endl;
+        // std::cout << vectorToString(merges) << std::endl;
         update_cluster_dissimilarities(merges, clusters, distance_arr, NO_PROCESSORS);
+        // std::cout << distance_arr << std::endl;
 
         update_cluster_nn_dist(clusters, distance_arr, max_merge_distance);
 
@@ -1251,7 +1261,7 @@ std::vector<int> RAC(
         calculate_initial_dissimilarities(base_arr, clusters, connectivity, max_merge_distance, BATCHSIZE);
     } else {
         distance_arr = calculate_initial_dissimilarities(base_arr, clusters, max_merge_distance);
-        std::cout << "Distance Arr: \n" << distance_arr << std::endl;
+        // std::cout << "Distance Arr: \n" << distance_arr << std::endl;
     } 
 
     // deallocate base array
