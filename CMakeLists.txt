@@ -6,7 +6,7 @@ message(STATUS "\n-- Finding Prefix Paths...\n")
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
 if(DEFINED ENV{CONDA_PREFIX})
     set(CONDA_PREFIX $ENV{CONDA_PREFIX})
-    message(STATUS "Loaded environment variable: CONDA_PREFIX=${CONDA_PREFIX_VALUE}")
+    message(STATUS "Loaded environment variable: CONDA_PREFIX=${CONDA_PREFIX}")
 else()
     message(STATUS "Environment variable CONDA_PREFIX is not set.")
 endif()
@@ -15,11 +15,11 @@ list(APPEND CMAKE_PREFIX_PATH ${CONDA_PREFIX})
 
 message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
 # Set LLVM directories
-find_package(LLVM REQUIRED CONFIG)
-message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
-list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
-include_directories(${LLVM_INCLUDE_DIRS})
-link_directories(${LLVM_LIBRARY_DIRS})
+# find_package(LLVM REQUIRED CONFIG)
+# message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
+# list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+# include_directories(${LLVM_INCLUDE_DIRS})
+# link_directories(${LLVM_LIBRARY_DIRS})
 
 # Set Python3.11 directories
 find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
@@ -27,18 +27,20 @@ message(STATUS "-- -- Found Python ${Python3_VERSION}")
 include_directories(${Python3_INCLUDE_DIRS})
 link_directories(${Python3_LIBRARY_DIRS})
 
+# Set compilers
 message(STATUS "\n-- Setting C and C++ Compilers to llvm...\n")
-set(ENV{CC} "${LLVM_TOOLS_BINARY_DIR}/clang")
-set(ENV{CXX} "${LLVM_TOOLS_BINARY_DIR}/clang++")
-set(CMAKE_CXX_COMPILER "${LLVM_TOOLS_BINARY_DIR}/clang++")
-set(ENV{LDFLAGS} "-L${LLVM_LIBRARY_DIRS}")
-set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
+set(ENV{CC} "${CONDA_PREFIX}/bin/clang")
+set(ENV{CXX} "${CONDA_PREFIX}/bin/clang++")
+set(CMAKE_CXX_COMPILER "${CONDA_PREFIX}/bin/clang++")
+set(ENV{LDFLAGS} "-L${CONDA_PREFIX}/lib")
+# set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
 
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fuse-ld=lld -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes")
 
 #-------------------Apply OpenMP if Possible (FIXME: should be using find_package instead, but it is broken)------------
+# I can add the flag fine??
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-fopenmp" COMPILER_FLAG_SUPPORTED)
 if (COMPILER_FLAG_SUPPORTED)
