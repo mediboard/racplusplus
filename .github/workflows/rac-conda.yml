@@ -30,7 +30,7 @@ jobs:
     - name: Get wheel file name
       id: get_wheel_filename
       run: |
-        echo "::set-output name=wheel_file::$(ls dist/*.whl)"
+        echo "::set-output name=wheel_file::$(basename $(ls dist/*.whl))"
     - name: Extract branch or tag name
       id: extract_ref
       run: |
