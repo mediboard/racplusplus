@@ -35,16 +35,16 @@ jobs:
       id: extract_ref
       run: |
         echo "::set-output name=ref_name::$(echo "${{ github.ref }}" | sed -r 's@refs/(heads|tags)/@@')"
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-        tag_name: ${{ steps.extract_ref.outputs.ref_name }}
-        release_name: Release ${{ steps.extract_ref.outputs.ref_name }}
-        draft: false
-        prerelease: false
+    # - name: Create Release
+    #   id: create_release
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+    #   with:
+    #     tag_name: ${{ steps.extract_ref.outputs.ref_name }}
+    #     release_name: Release ${{ steps.extract_ref.outputs.ref_name }}
+    #     draft: false
+    #     prerelease: false
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
