@@ -954,11 +954,6 @@ void update_cluster_neighbors(
         int neighbor_nn_id = clusters[neighbor_id]->nn;
         double dissimilarity = update_chunk.second[i].second;
 
-        std::cout << "Cluster ID: " << other_cluster->id;
-        std::cout << " Neighbor ID: " << neighbor_id;
-        std::cout << " Neighbor NN ID: " << neighbor_nn_id;
-        std::cout << " Dissimilarity: " << dissimilarity << std::endl;
-
         update_neighbors[neighbor_id] = 1;
         update_neighbors[neighbor_nn_id] = -1;
 

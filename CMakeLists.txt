@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
-project(racplusplus VERSION "0.0.2")
+project(racplusplus VERSION "0.0.5")
 
 message(STATUS "\n-- Finding Prefix Paths...\n")
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
