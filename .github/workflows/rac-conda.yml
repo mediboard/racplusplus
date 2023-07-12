@@ -74,7 +74,6 @@ jobs:
     - name: Install dependencies
       run: |
         conda init bash
-        source ~/.bashrc
         conda env update --file environment.yml --name base
         conda activate base
     - name: Build wheel
