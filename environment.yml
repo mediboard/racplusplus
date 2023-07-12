@@ -5,6 +5,4 @@ channels:
 dependencies:
   - llvm-openmp
   - eigen
-  - pybind11
   - clang
-  - scikit-build
