@@ -24,6 +24,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
+
+      - name: Install Python dev package (Ubuntu only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpython3.10-dev
       
       - name: Add conda to system path
         run: |
@@ -33,6 +39,11 @@ jobs:
         run: |
           conda env update --file environment.yml --name base
           echo "CONDA_BASE_PREFIX=$(conda info --base)" >> $GITHUB_ENV
+
+      - name: Set compilers
+        run: |
+          echo "CC=$(${{ env.CONDA_BASE_PREFIX }}/bin/clang)" >> $GITHUB_ENV
+          echo "CXX=$(${{ env.CONDA_BASE_PREFIX }}/bin/clang++)" >> $GITHUB_ENV
     
       - name: Install build dependencies
         run: |
@@ -43,7 +54,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} Eigen_PATH=/path/to/Eigen OpenMP_PATH=/path/to/OpenMP"
+          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} CC=${{ env.CC }} CXX=${{ env.CXX }}"
 
       - uses: actions/upload-artifact@v2
         with:
