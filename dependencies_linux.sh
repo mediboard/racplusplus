@@ -22,4 +22,4 @@ echo "CC: $CC"
 echo "CXX: $CXX"
 echo "LOCAL_INCLUDE_DIRS: $LOCAL_INCLUDE_DIRS"
 
-yum install -y python3-dev
+export PYTHON_EXECUTABLE=${PYBIN}/python

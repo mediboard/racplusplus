@@ -22,6 +22,7 @@ message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
 # link_directories(${LLVM_LIBRARY_DIRS})
 
 if(DEFINED ENV{PYTHON_EXECUTABLE})
+    message(STATUS "Loaded environment variable: PYTHON_EXECUTABLE=$ENV{PYTHON_EXECUTABLE}")
     set(Python3_EXECUTABLE $ENV{PYTHON_EXECUTABLE})
 endif()
 
