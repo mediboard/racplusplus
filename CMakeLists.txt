@@ -22,17 +22,17 @@ message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
 # link_directories(${LLVM_LIBRARY_DIRS})
 
 # Set Python3.11 directories
-find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+# find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
 message(STATUS "-- -- Found Python ${Python3_VERSION}")
 include_directories(${Python3_INCLUDE_DIRS})
 link_directories(${Python3_LIBRARY_DIRS})
 
 # Set compilers
 message(STATUS "\n-- Setting C and C++ Compilers to llvm...\n")
-set(ENV{CC} "${CONDA_PREFIX}/bin/clang")
-set(ENV{CXX} "${CONDA_PREFIX}/bin/clang++")
-set(CMAKE_CXX_COMPILER "${CONDA_PREFIX}/bin/clang++")
-set(ENV{LDFLAGS} "-L${CONDA_PREFIX}/lib")
+# set(ENV{CC} "${CONDA_PREFIX}/bin/clang")
+# set(ENV{CXX} "${CONDA_PREFIX}/bin/clang++")
+set(CMAKE_CXX_COMPILER "${CXX}")
+# set(ENV{LDFLAGS} "-L${CONDA_PREFIX}/lib")
 # set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
 
 #Set Opt, Warning Flags, Linker
@@ -51,7 +51,7 @@ endif ()
 #-------------------------------------------------------------------------------------------------------------------
 
 #-------------------required packages-------------------------
-find_package(Python3 REQUIRED Development)
+# find_package(Python3 REQUIRED Development)
 find_package(Python3 REQUIRED Interpreter)
 find_package(Eigen3 REQUIRED)
 find_package(pybind11 REQUIRED)
