@@ -28,7 +28,13 @@ build-backend = "setuptools.build_meta"
 "Homepage" = "https://github.com/mediboard/racplusplus"
 "Bug Tracker" = "https://github.com/mediboard/racplusplus/issues"
 
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+environment = { CC="clang", CXX="clang++" }
 
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+environment = { CC="clang", CXX="clang++" }
 
     
         
