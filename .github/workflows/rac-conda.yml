@@ -21,16 +21,14 @@ jobs:
         with:
           python-version: '3.10'
       
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-    
-      - name: Install conda dependencies
+      - name: Add conda to system path
         run: |
-          conda env create -f environment.yml
-          conda activate my_env
+          echo $CONDA/bin >> $GITHUB_PATH
 
+      - name: Install dependencies
+        run: |
+          conda env update --file environment.yml --name base
+    
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
