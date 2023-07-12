@@ -4,7 +4,7 @@
 set -e
 
 # Download Eigen
-wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
+curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 
 # Unzip Eigen
 unzip eigen-3.4.0.zip
