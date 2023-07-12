@@ -35,6 +35,9 @@ jobs:
       #   run: |
       #     conda env update --file environment.yml --name base
       #     echo "CONDA_BASE_PREFIX=$(conda info --base)" >> $GITHUB_ENV
+      - name: Make linux script executable
+        if: runner.os == 'Linux'
+        run: chmod +x ./dependencies_linux.sh
 
       - name: Install build dependencies
         run: |
