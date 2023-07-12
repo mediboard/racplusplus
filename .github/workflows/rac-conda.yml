@@ -28,6 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda env update --file environment.yml --name base
+          echo "CONDA_PYTHON=$(which python)" >> $GITHUB_ENV
     
       - name: Install build dependencies
         run: |
