@@ -55,58 +55,63 @@ jobs:
         asset_path: ./dist/${{ steps.get_wheel_filename.outputs.wheel_file }}
         asset_name: ${{ steps.get_wheel_filename.outputs.wheel_file }}
         asset_content_type: application/zip # application/zip could be used for .whl filesjobs:
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
 
-  build-macos:
-    runs-on: macos-latest
-    strategy:
-      max-parallel: 5
+  # build-macos:
+  #   runs-on: macos-latest
+  #   strategy:
+  #     max-parallel: 5
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.10'
-    - name: Install Miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-    - name: Install dependencies
-      run: |
-        conda init bash
-        eval "$(conda shell.bash hook)"
-        conda env update --file environment.yml --name base
-        conda activate base
-    - name: Build wheel
-      run: |
-        conda init bash
-        conda activate base
-        python setup.py bdist_wheel
-    - name: Get wheel file name
-      id: get_wheel_filename
-      run: |
-        echo "::set-output name=wheel_file::$(basename $(ls dist/*.whl))"
-    - name: Extract branch or tag name
-      id: extract_ref
-      run: |
-        echo "::set-output name=ref_name::$(echo "${{ github.ref }}" | sed -r 's@refs/(heads|tags)/@@')"
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-        tag_name: ${{ steps.extract_ref.outputs.ref_name }}
-        release_name: Release ${{ steps.extract_ref.outputs.ref_name }}
-        draft: false
-        prerelease: false
-    - name: Upload Release Asset
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing its ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./dist/${{ steps.get_wheel_filename.outputs.wheel_file }}
-        asset_name: ${{ steps.get_wheel_filename.outputs.wheel_file }}
-        asset_content_type: application/zip # application/zip could be used for .whl files.
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Set up Python 3.10
+  #     uses: actions/setup-python@v3
+  #     with:
+  #       python-version: '3.10'
+  #   - name: Install Miniconda
+  #     uses: conda-incubator/setup-miniconda@v2
+  #     with:
+  #       miniconda-version: "latest"
+  #   - name: Install dependencies
+  #     run: |
+  #       conda init bash
+  #       eval "$(conda shell.bash hook)"
+  #       conda env update --file environment.yml --name base
+  #       conda activate base
+  #   - name: Build wheel
+  #     run: |
+  #       conda init bash
+  #       conda activate base
+  #       python setup.py bdist_wheel
+  #   - name: Get wheel file name
+  #     id: get_wheel_filename
+  #     run: |
+  #       echo "::set-output name=wheel_file::$(basename $(ls dist/*.whl))"
+  #   - name: Extract branch or tag name
+  #     id: extract_ref
+  #     run: |
+  #       echo "::set-output name=ref_name::$(echo "${{ github.ref }}" | sed -r 's@refs/(heads|tags)/@@')"
+  #   - name: Create Release
+  #     id: create_release
+  #     uses: actions/create-release@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+  #     with:
+  #       tag_name: ${{ steps.extract_ref.outputs.ref_name }}
+  #       release_name: Release ${{ steps.extract_ref.outputs.ref_name }}
+  #       draft: false
+  #       prerelease: false
+  #   - name: Upload Release Asset
+  #     id: upload-release-asset 
+  #     uses: actions/upload-release-asset@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     with:
+  #       upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing its ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+  #       asset_path: ./dist/${{ steps.get_wheel_filename.outputs.wheel_file }}
+  #       asset_name: ${{ steps.get_wheel_filename.outputs.wheel_file }}
+  #       asset_content_type: application/zip # application/zip could be used for .whl files.
