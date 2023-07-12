@@ -21,6 +21,10 @@ message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
 # include_directories(${LLVM_INCLUDE_DIRS})
 # link_directories(${LLVM_LIBRARY_DIRS})
 
+if(DEFINED ENV{PYTHON_EXECUTABLE})
+    set(Python3_EXECUTABLE $ENV{PYTHON_EXECUTABLE})
+endif()
+
 # Set Python3.11 directories
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 message(STATUS "-- -- Found Python ${Python3_VERSION}")

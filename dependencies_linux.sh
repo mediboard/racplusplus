@@ -21,3 +21,5 @@ export LOCAL_INCLUDE_DIRS=/usr/local/include
 echo "CC: $CC"
 echo "CXX: $CXX"
 echo "LOCAL_INCLUDE_DIRS: $LOCAL_INCLUDE_DIRS"
+
+yum install -y python3-dev

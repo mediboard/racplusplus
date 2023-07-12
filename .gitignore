@@ -14,3 +14,4 @@ src/pybind11
 _skbuild/*
 *.egg-info/*
 *.egg-info
+connectivity_matrix.pkl
