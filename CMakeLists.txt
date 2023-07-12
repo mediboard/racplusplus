@@ -22,10 +22,7 @@ message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
 # link_directories(${LLVM_LIBRARY_DIRS})
 
 # Set Python3.11 directories
-find_program(PYTHON_EXECUTABLE NAMES python3 PATHS ${CONDA_PREFIX}/bin NO_DEFAULT_PATH)
-set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
-
-find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 message(STATUS "-- -- Found Python ${Python3_VERSION}")
 include_directories(${Python3_INCLUDE_DIRS})
 link_directories(${Python3_LIBRARY_DIRS})
