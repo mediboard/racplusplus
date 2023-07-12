@@ -4,16 +4,16 @@
 set -e
 
 # Update the package list
-sudo apt-get update
+apt-get update
 
 # Install g++ and clang if they are not already installed
-sudo apt-get install -y g++ clang
+apt-get install -y g++ clang
 
 # Install libomp-dev (for OpenMP)
-sudo apt-get install -y libomp-dev
+apt-get install -y libomp-dev
 
 # Install unzip if it's not already installed
-sudo apt-get install -y unzip
+apt-get install -y unzip
 
 # Download Eigen
 wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
@@ -22,12 +22,12 @@ wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 unzip eigen-3.4.0.zip
 
 # Move Eigen headers to /usr/local/include to make them available system-wide
-sudo cp -r eigen-3.4.0/Eigen /usr/local/include/
+cp -r eigen-3.4.0/Eigen /usr/local/include/
 
 # Install pip if it's not already installed
 if ! command -v pip &> /dev/null
 then
-    sudo apt-get install -y python3-pip
+    apt-get install -y python3-pip
 fi
 
 # Install pybind11
