@@ -32,6 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda env update --file environment.yml --name base
+          echo "CONDA_BASE_PREFIX=$(conda info --base)" >> $GITHUB_ENV
     
       - name: Install build dependencies
         run: |
@@ -42,7 +43,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_ENVIRONMENT: "Eigen_PATH=/path/to/Eigen OpenMP_PATH=/path/to/OpenMP"
+          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} Eigen_PATH=/path/to/Eigen OpenMP_PATH=/path/to/OpenMP"
 
       - uses: actions/upload-artifact@v2
         with:
