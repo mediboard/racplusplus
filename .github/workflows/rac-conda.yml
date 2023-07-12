@@ -11,11 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
-        compiler:
-          - name: clang
-            cc: clang-14
-            cxx: clang++-14
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,26 +21,21 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Python dev package (Ubuntu only)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-dev
+      # - name: Install Python dev package (Ubuntu only)
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y python3-dev
       
-      - name: Add conda to system path
-        run: |
-          echo $CONDA/bin >> $GITHUB_PATH
+      # - name: Add conda to system path
+      #   run: |
+      #     echo $CONDA/bin >> $GITHUB_PATH
 
-      - name: Install dependencies
-        run: |
-          conda env update --file environment.yml --name base
-          echo "CONDA_BASE_PREFIX=$(conda info --base)" >> $GITHUB_ENV
+      # - name: Install dependencies
+      #   run: |
+      #     conda env update --file environment.yml --name base
+      #     echo "CONDA_BASE_PREFIX=$(conda info --base)" >> $GITHUB_ENV
 
-      - name: Set compilers
-        run: |
-          echo "CC=$(${{ env.CONDA_BASE_PREFIX }}/bin/clang)" >> $GITHUB_ENV
-          echo "CXX=$(${{ env.CONDA_BASE_PREFIX }}/bin/clang++)" >> $GITHUB_ENV
-    
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
@@ -53,8 +44,6 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} CC=${{ env.CONDA_BASE_PREFIX }}/bin/clang CXX=${{ env.CONDA_BASE_PREFIX }}/bin/clang++"
 
       - uses: actions/upload-artifact@v2
         with:
