@@ -38,6 +38,9 @@ set(CMAKE_CXX_COMPILER "${CXX}")
 set(ENV{LDFLAGS} "-L${CONDA_PREFIX}/lib")
 set(ENV{CPPFLAGS} "-I${LLVM_INCLUDE_DIRS}")
 
+# Print out compiler information
+message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes")
