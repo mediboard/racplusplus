@@ -23,3 +23,4 @@ echo "CXX: $CXX"
 echo "LOCAL_INCLUDE_DIRS: $LOCAL_INCLUDE_DIRS"
 
 export PYTHON_EXECUTABLE=${PYBIN}/python
+export EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3

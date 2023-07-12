@@ -53,6 +53,9 @@ else ()
 endif ()
 #-------------------------------------------------------------------------------------------------------------------
 
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
