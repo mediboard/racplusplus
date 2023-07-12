@@ -29,7 +29,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpython3.10-dev
+          sudo apt-get install -y python3-dev
       
       - name: Add conda to system path
         run: |
@@ -54,7 +54,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} CC=${{ env.CC }} CXX=${{ env.CXX }}"
+          CIBW_ENVIRONMENT: "CONDA_PREFIX=${{ env.CONDA_BASE_PREFIX }} CC=${{ env.CONDA_BASE_PREFIX }}/bin/clang CXX=${{ env.CONDA_BASE_PREFIX }}/bin/clang++"
 
       - uses: actions/upload-artifact@v2
         with:

@@ -30,11 +30,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64", "aarch64"]
-environment = { CC="clang", CXX="clang++" }
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
-environment = { CC="clang", CXX="clang++" }
 
     
         
