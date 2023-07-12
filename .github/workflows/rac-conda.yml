@@ -16,9 +16,6 @@ jobs:
           - name: clang
             cc: clang-14
             cxx: clang++-14
-    env:
-      CC: ${{ matrix.cc }}
-      CXX: ${{ matrix.cxx }}
 
     steps:
       - uses: actions/checkout@v2
@@ -45,7 +42,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_ENVIRONMENT: "CC=${{ env.CC }} CXX=${{ env.CXX }} Eigen_PATH=/path/to/Eigen OpenMP_PATH=/path/to/OpenMP"
+          CIBW_ENVIRONMENT: "Eigen_PATH=/path/to/Eigen OpenMP_PATH=/path/to/OpenMP"
 
       - uses: actions/upload-artifact@v2
         with:
