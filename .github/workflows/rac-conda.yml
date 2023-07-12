@@ -79,6 +79,7 @@ jobs:
         conda activate base
     - name: Build wheel
       run: |
+        conda activate base
         python setup.py bdist_wheel
     - name: Get wheel file name
       id: get_wheel_filename
