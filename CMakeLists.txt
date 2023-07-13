@@ -88,12 +88,23 @@ set(python_module_name _racplusplus)
 pybind11_add_module(${python_module_name} MODULE
      src/racplusplus/_racplusplus.cpp
     )
-target_link_libraries(${python_module_name} PRIVATE
-    -L${PYTHON311_LIBRARIES}
-    ${pybind11_LIBRARIES}
-    c++
-    Eigen3::Eigen
-)
+
+#-----------------------------------Link Libraries-------------------------------------
+if(DEFINED ENV{OpenMP_LIBRARY})
+  message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
+  target_link_libraries(${python_module_name} PRIVATE
+      -L${PYTHON311_LIBRARIES}
+      ${pybind11_LIBRARIES}
+      c++
+      Eigen3::Eigen
+      ${OpenMP_LIBRARY})
+else()
+  target_link_libraries(${python_module_name} PRIVATE
+      -L${PYTHON311_LIBRARIES}
+      ${pybind11_LIBRARIES}
+      c++
+      Eigen3::Eigen)
+endif()
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py
