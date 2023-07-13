@@ -47,8 +47,8 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        # env:
-        #   CIBW_ENVIRONMENT: CC= 
+        env:
+          CIBW_ENVIRONMENT: "CC=/opt/rh/devtoolset-10/root/usr/bin/gcc CXX=/opt/rh/devtoolset-10/root/usr/bin/g++"
 
       - uses: actions/upload-artifact@v2
         with:
