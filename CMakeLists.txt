@@ -92,7 +92,6 @@ target_link_libraries(${python_module_name} PRIVATE
     -L${PYTHON311_LIBRARIES}
     ${pybind11_LIBRARIES}
     c++
-    c++abi
     Eigen3::Eigen
 )
 #----------------------------------------------------------------------------------------
