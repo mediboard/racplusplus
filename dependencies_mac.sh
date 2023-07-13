@@ -27,11 +27,13 @@ make install
 # Exit build directory
 cd ../../..
 
-# Download Eigen
-curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
-
-# Unzip Eigen
-unzip eigen-3.4.0.zip
+if [ ! -d "eigen-3.4.0" ]; then
+  # Directory does not exist, download and unzip Eigen
+  curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
+  unzip eigen-3.4.0.zip
+else
+  echo "Eigen already exists, skipping download."
+fi
 
 EIGEN_BUILD_DIR="eigen-3.4.0/build"
 if [ -d "${EIGEN_BUILD_DIR}" ]; then
