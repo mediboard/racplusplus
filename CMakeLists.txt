@@ -47,17 +47,17 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -Wsign-compare -Wunreachable-code -fwrapv -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
 
 #-------------------Apply OpenMP if Possible (FIXME: should be using find_package instead, but it is broken)------------
 # I can add the flag fine??
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-fopenmp" COMPILER_FLAG_SUPPORTED)
-if (COMPILER_FLAG_SUPPORTED)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-else ()
-  message(WARNING "The compiler does not support -fopenmp. Not optimizing with OpenMP.")
-endif ()
+# include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-fopenmp" COMPILER_FLAG_SUPPORTED)
+# if (COMPILER_FLAG_SUPPORTED)
+#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+# else ()
+#   message(WARNING "The compiler does not support -fopenmp. Not optimizing with OpenMP.")
+# endif ()
 #-------------------------------------------------------------------------------------------------------------------
 
 execute_process(
@@ -98,6 +98,7 @@ if(DEFINED ENV{OpenMP_LIBRARY})
       c++
       Eigen3::Eigen
       ${OpenMP_LIBRARY})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 else()
   target_link_libraries(${python_module_name} PRIVATE
       -L${PYTHON311_LIBRARIES}
