@@ -35,6 +35,12 @@ jobs:
           pip install scikit-build
           pip install cibuildwheel
 
+      - name: Set Clang compiler for macOS
+        if: runner.os == 'macOS'
+        run: |
+          echo "CC=$(which clang)" >> $GITHUB_ENV
+          echo "CXX=$(which clang++)" >> $GITHUB_ENV
+
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
 
