@@ -46,6 +46,13 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
 
+execute_process(
+    COMMAND bash -c "pip show pybind11"
+    OUTPUT_VARIABLE PYBIND11_OUTPUT
+)
+
+message(STATUS "Pybind11 pip show output: ${PYBIND11_OUTPUT}")
+
 if (MSVC)
   add_compile_options(/openmp)
 endif()
