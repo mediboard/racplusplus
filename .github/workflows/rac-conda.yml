@@ -48,7 +48,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         # env:
-        #   CIBW_BEFORE_BUILD: ./dependencies_linux.sh
+        #   CIBW_ENVIRONMENT: CC= 
 
       - uses: actions/upload-artifact@v2
         with:

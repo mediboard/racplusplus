@@ -31,6 +31,10 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel.linux]
 archs = ["x86_64", "aarch64"]
 before-build = "./dependencies_linux.sh"
+environment = { 
+    "CXX": "/opt/rh/devtoolset-10/root/usr/bin/g++",
+    "CC": "/opt/rh/devtoolset-10/root/usr/bin/gcc",
+}
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
