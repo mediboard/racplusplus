@@ -32,6 +32,10 @@ link_directories(${Python3_LIBRARY_DIRS})
 
 # Set compilers
 message(STATUS "\n-- Setting C and C++ Compilers to llvm...\n")
+# print cc and cxx env variables
+message(STATUS "CC: $ENV{CC}")
+message(STATUS "CXX: $ENV{CXX}")
+
 # set(ENV{CC} "${CONDA_PREFIX}/bin/clang")
 # set(ENV{CXX} "${CONDA_PREFIX}/bin/clang++")
 set(CMAKE_CXX_COMPILER "${CXX}")
