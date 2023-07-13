@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Force -Path $EIGEN_BUILD_DIR
 Set-Location $EIGEN_BUILD_DIR 
 
 # Configure
-cmake ..
+cmake -DCMAKE_C_COMPILER=$env:CC -DCMAKE_CXX_COMPILER=$env:CXX ..
 
 # Install
 make install
