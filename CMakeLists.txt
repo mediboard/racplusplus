@@ -56,6 +56,12 @@ else ()
 endif ()
 #-------------------------------------------------------------------------------------------------------------------
 
+execute_process(
+    COMMAND bash -c "pip show pybind11"
+    OUTPUT_VARIABLE PYBIND11_OUTPUT
+)
+
+message(STATUS "Pybind11 pip show output: ${PYBIND11_OUTPUT}")
 
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
