@@ -51,6 +51,8 @@ if (MSVC)
   add_compile_options(/openmp)
 
   execute_process(
+    set(PYTHON_EXECUTABLE $ENV{PYTHON_PATH})
+
     COMMAND "${Python3_EXECUTABLE}" -m pip show -f pybind11
     COMMAND grep Location
     COMMAND awk "{print $2}"

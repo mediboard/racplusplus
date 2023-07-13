@@ -44,6 +44,11 @@ jobs:
         if: runner.os == 'Windows'
         run: pip install pybind11
 
+      - name: Set Python path for windows
+        if: runner.os == 'Windows'
+        run: echo "PYTHON_PATH=$(Get-Command python | Select-Object -ExpandProperty Source)" >> $GITHUB_ENV
+        shell: pwsh
+
       - name: Set mac environment variables 
         if: runner.os == 'macOS'
         run: |
