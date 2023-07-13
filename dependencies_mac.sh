@@ -4,12 +4,12 @@
 set -e
 
 # Download and unpack OpenMP source code
-curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/openmp-16.0.6.src.tar.xz
-tar xvf openmp-16.0.6.src.tar.xz
+curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/openmp-12.0.1.src.tar.xz
+tar xvf openmp-12.0.1.src.tar.xz
 
 # Create build directory and navigate to it
-mkdir openmp-16.0.6.src/build
-cd openmp-16.0.6.src/build
+mkdir openmp-12.0.1.src/build
+cd openmp-12.0.1.src/build
 
 # Configure and build OpenMP
 cmake ..
