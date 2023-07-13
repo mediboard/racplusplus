@@ -49,9 +49,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -f
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
+  set(Python3_EXECUTABLE $ENV{PYTHON_PATH})
 
   execute_process(
-    set(PYTHON_EXECUTABLE $ENV{PYTHON_PATH})
 
     COMMAND "${Python3_EXECUTABLE}" -m pip show -f pybind11
     COMMAND grep Location
