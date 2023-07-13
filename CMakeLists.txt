@@ -7,6 +7,7 @@ if(DEFINED ENV{OpenMP_LIBRARY})
     message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lomp")
+    include_directories("/usr/local/include")
 endif()
 
 message(STATUS "\n-- Finding Prefix Paths...\n")
