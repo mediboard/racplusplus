@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 # Set CC and CXX environment variables to clang
 $env:CC = (Get-Command gcc).Source
-$env:CXX = (Get-Command gcc++).Source
+$env:CXX = (Get-Command g++).Source
 
 # Download and unzip Eigen if it does not exist
 if(-Not (Test-Path -Path "eigen-3.4.0")) {
