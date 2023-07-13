@@ -29,7 +29,7 @@ build-backend = "setuptools.build_meta"
 "Bug Tracker" = "https://github.com/mediboard/racplusplus/issues"
 
 [tool.cibuildwheel.linux]
-archs = ["x86_64", "aarch64"]
+archs = ["x86_64"]
 before-build = "./dependencies_linux.sh"
 
 [tool.cibuildwheel.macos]
