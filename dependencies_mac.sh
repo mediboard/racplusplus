@@ -3,17 +3,7 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-BUILD_IDENTIFIER=${CIBW_BUILD}
-if [[ $BUILD_IDENTIFIER == *"_x86_64"* ]]; then
-  ARCH="x86_64"
-elif [[ $BUILD_IDENTIFIER == *"_arm64"* ]]; then
-  ARCH="arm64"
-else
-  echo "Unknown architecture"
-  exit 1
-fi
-
-OMP_BUILD_DIR="openmp-12.0.1.src/build_${ARCH}"
+OMP_BUILD_DIR="openmp-12.0.1.src/build_${CIBW_BUILD}"
 
 # Download and unpack OpenMP source code
 curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/openmp-12.0.1.src.tar.xz
@@ -39,7 +29,7 @@ curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 # Unzip Eigen
 unzip eigen-3.4.0.zip
 
-EIGEN_BUILD_DIR="eigen-3.4.0/build_${ARCH}"
+EIGEN_BUILD_DIR="eigen-3.4.0/build_${CIBW_BUILD}"
 
 # Create build directory
 mkdir ${EIGEN_BUILD_DIR} 
