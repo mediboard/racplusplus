@@ -3,6 +3,24 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+# Download and unpack OpenMP source code
+curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/openmp-16.0.6.src.tar.xz
+tar xvf openmp-16.0.6.src.tar.xz
+
+# Create build directory and navigate to it
+mkdir openmp-16.0.6.src/build
+cd openmp-16.0.6.src/build
+
+# Configure and build OpenMP
+cmake ..
+make
+
+# Install OpenMP
+make install
+
+# Exit build directory
+cd ../../..
+
 # Download Eigen
 curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 
