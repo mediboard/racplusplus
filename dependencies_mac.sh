@@ -23,7 +23,7 @@ make install
 PYTHON_PATH=$(which python)
 
 # Install pybind11 using the correct Python interpreter
-# $PYTHON_PATH -m pip install pybind11
+$PYTHON_PATH -m pip install pybind11
 
 # Move Eigen headers to /usr/local/include to make them available system-wide
 # cp -r eigen-3.4.0/Eigen /usr/local/include/
