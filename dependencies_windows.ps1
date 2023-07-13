@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Force -Path $EIGEN_BUILD_DIR
 Set-Location $EIGEN_BUILD_DIR 
 
 # Configure
-cmake -DCMAKE_DISABLE_FIND_PACKAGE_Fortran=TRUE -DCMAKE_C_COMPILER=$env:CC -DCMAKE_CXX_COMPILER=$env:CXX ..
+cmake -DCMAKE_C_COMPILER=$env:CC -DCMAKE_CXX_COMPILER=$env:CXX ..
 
 # Install
 make install

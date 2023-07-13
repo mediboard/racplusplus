@@ -49,18 +49,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -f
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -m pip show -f pybind11
+    COMMAND grep Location
+    COMMAND awk "{print $2}"
+    OUTPUT_VARIABLE PYBIND11_LOCATION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # Append the pybind11 directory to CMAKE_PREFIX_PATH
+  list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_LOCATION}/pybind11)
 endif()
-
-# Use Python3 to get the site-packages directory
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c
-          "import site; print(site.getsitepackages()[0])"
-  OUTPUT_VARIABLE Python3_SITE_PACKAGES
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# Append the site-packages directory to CMAKE_PREFIX_PATH
-list(APPEND CMAKE_PREFIX_PATH ${Python3_SITE_PACKAGES})
 
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
