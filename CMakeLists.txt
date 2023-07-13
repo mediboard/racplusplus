@@ -14,6 +14,8 @@ list(APPEND CMAKE_PREFIX_PATH ${CONDA_PREFIX})
 
 
 message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
+list(APPEND CMAKE_PREFIX_PATH ${Python_SITEARCH})
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 # Set LLVM directories
 # find_package(LLVM REQUIRED CONFIG)
 # message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -52,9 +54,6 @@ else ()
   message(WARNING "The compiler does not support -fopenmp. Not optimizing with OpenMP.")
 endif ()
 #-------------------------------------------------------------------------------------------------------------------
-
-include_directories(${EIGEN3_INCLUDE_DIR})
-message(STATUS "EIGEN3_INCLUDE_DIR: ${EIGEN3_INCLUDE_DIR}")
 
 
 #-------------------required packages-------------------------
