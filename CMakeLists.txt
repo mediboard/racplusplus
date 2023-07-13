@@ -47,7 +47,7 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -Wsign-compare -Wunreachable-code -fwrapv -Wall -fcolor-diagnostics -fansi-escape-codes")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -Wsign-compare -Wunreachable-code -fwrapv -Wall")
 
 #-------------------Apply OpenMP if Possible (FIXME: should be using find_package instead, but it is broken)------------
 # I can add the flag fine??
