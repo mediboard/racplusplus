@@ -38,7 +38,7 @@ message(STATUS "CXX: $ENV{CXX}")
 
 # set(ENV{CC} "${CONDA_PREFIX}/bin/clang")
 # set(ENV{CXX} "${CONDA_PREFIX}/bin/clang++")
-set(CMAKE_CXX_COMPILER "${CXX}")
+set(CMAKE_CXX_COMPILER "$ENV{CXX}")
 # set(ENV{LDFLAGS} "-L${CONDA_PREFIX}/lib")
 set(ENV{CPPFLAGS} "-I${LOCAL_INCLUDE_DIRS}")
 
