@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 project(racplusplus VERSION "0.0.5")
 
+# Set the OpenMP flags here
+if(DEFINED ENV{OpenMP_LIBRARY})
+    message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lomp")
+endif()
+
 message(STATUS "\n-- Finding Prefix Paths...\n")
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
 if(DEFINED ENV{CONDA_PREFIX})
@@ -90,22 +97,11 @@ pybind11_add_module(${python_module_name} MODULE
     )
 
 #-----------------------------------Link Libraries-------------------------------------
-if(DEFINED ENV{OpenMP_LIBRARY})
-  message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
-  target_link_libraries(${python_module_name} PRIVATE
-      -L${PYTHON311_LIBRARIES}
-      ${pybind11_LIBRARIES}
-      c++
-      Eigen3::Eigen
-      $ENV{OpenMP_LIBRARY})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-else()
-  target_link_libraries(${python_module_name} PRIVATE
-      -L${PYTHON311_LIBRARIES}
-      ${pybind11_LIBRARIES}
-      c++
-      Eigen3::Eigen)
-endif()
+target_link_libraries(${python_module_name} PRIVATE
+    -L${PYTHON311_LIBRARIES}
+    ${pybind11_LIBRARIES}
+    c++
+    Eigen3::Eigen)
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py
