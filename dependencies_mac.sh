@@ -3,7 +3,7 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-OMP_BUILD_DIR="openmp-12.0.1.src/build_${CIBW_BUILD}"
+OMP_BUILD_DIR="openmp-12.0.1.src/build_${CIBW_BUILDING_IDENTIFIER}"
 
 # Download and unpack OpenMP source code
 curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/openmp-12.0.1.src.tar.xz
@@ -29,7 +29,7 @@ curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 # Unzip Eigen
 unzip eigen-3.4.0.zip
 
-EIGEN_BUILD_DIR="eigen-3.4.0/build_${CIBW_BUILD}"
+EIGEN_BUILD_DIR="eigen-3.4.0/build_${CIBW_BUILDING_IDENTIFIER}"
 
 # Create build directory
 mkdir ${EIGEN_BUILD_DIR} 
