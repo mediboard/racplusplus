@@ -97,7 +97,7 @@ if(DEFINED ENV{OpenMP_LIBRARY})
       ${pybind11_LIBRARIES}
       c++
       Eigen3::Eigen
-      ${OpenMP_LIBRARY})
+      $ENV{OpenMP_LIBRARY})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 else()
   target_link_libraries(${python_module_name} PRIVATE
