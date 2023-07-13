@@ -25,6 +25,10 @@ jobs:
         if: runner.os == 'Linux'
         run: chmod +x ./dependencies_linux.sh
 
+      - name: Make mac script executable
+        if: runner.os == 'macOS'
+        run: chmod +x ./dependencies_mac.sh
+
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
