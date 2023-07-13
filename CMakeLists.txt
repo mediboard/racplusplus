@@ -14,8 +14,6 @@ list(APPEND CMAKE_PREFIX_PATH ${CONDA_PREFIX})
 
 
 message(STATUS "\n-- Setting LLVM and Python3 Directories...\n")
-list(APPEND CMAKE_PREFIX_PATH ${Python_SITEARCH})
-message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 # Set LLVM directories
 # find_package(LLVM REQUIRED CONFIG)
 # message(STATUS "-- -- Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -25,6 +23,9 @@ message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 # Set Python3.11 directories
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+list(APPEND CMAKE_PREFIX_PATH ${Python_SITEARCH})
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
 message(STATUS "-- -- Found Python ${Python3_VERSION}")
 include_directories(${Python3_INCLUDE_DIRS})
 link_directories(${Python3_LIBRARY_DIRS})
