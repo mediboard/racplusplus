@@ -40,6 +40,10 @@ jobs:
           pip install scikit-build
           pip install cibuildwheel
 
+      - name: Install pybind for windows
+        if: runner.os == 'Windows'
+        run: pip install pybind11
+
       - name: Set mac environment variables 
         if: runner.os == 'macOS'
         run: |
