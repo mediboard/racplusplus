@@ -5,7 +5,7 @@ project(racplusplus VERSION "0.0.5")
 # Set the OpenMP flags here
 if(DEFINED ENV{OpenMP_LIBRARY})
     message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lomp")
 endif()
 
