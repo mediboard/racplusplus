@@ -32,4 +32,8 @@ echo "CC: $CC"
 echo "CXX: $CXX"
 echo "LOCAL_INCLUDE_DIRS: $LOCAL_INCLUDE_DIRS"
 
+# pring out which pybind11 
+# which pybind11
+pip show -f pybind11
+
 # export EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3
