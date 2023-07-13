@@ -9,8 +9,18 @@ curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 # Unzip Eigen
 unzip eigen-3.4.0.zip
 
+# Create build directory
+mkdir eigen-3.4.0/build
+cd eigen-3.4.0/build
+
+# Configure
+cmake ..
+
+# Install
+make install
+
 # Move Eigen headers to /usr/local/include to make them available system-wide
-cp -r eigen-3.4.0/Eigen /usr/local/include/
+# cp -r eigen-3.4.0/Eigen /usr/local/include/
 
 # Set CC and CXX environment variables to clang
 export CC=$(which gcc)
@@ -22,5 +32,4 @@ echo "CC: $CC"
 echo "CXX: $CXX"
 echo "LOCAL_INCLUDE_DIRS: $LOCAL_INCLUDE_DIRS"
 
-export PYTHON_EXECUTABLE=${PYBIN}/python
-export EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3
+# export EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3
