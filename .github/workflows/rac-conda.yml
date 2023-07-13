@@ -29,10 +29,10 @@ jobs:
         if: runner.os == 'macOS'
         run: chmod +x ./dependencies_mac.sh
 
-      - name: Run Windows dependencies script
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: .\dependencies_windows.ps1
+      # - name: Run Windows dependencies script
+      #   if: runner.os == 'Windows'
+      #   shell: powershell
+      #   run: .\dependencies_windows.ps1
 
       - name: Install build dependencies
         run: |

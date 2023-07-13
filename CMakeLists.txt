@@ -65,8 +65,9 @@ endif()
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
-find_package(Eigen3 REQUIRED)
 find_package(pybind11 REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 #-------------------------------------------------------------
 
 #-------------------------------------Include Directories----------------------------
