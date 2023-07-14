@@ -84,15 +84,11 @@ jobs:
           prerelease: false
 
       - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for wheel in ./wheelhouse/*.whl; do
-            echo "Uploading ${wheel}"
-            curl --fail \
-              -X POST \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              -H "Content-Type: $(file -b --mime-type ${wheel})" \
-              --data-binary @${wheel} \
-              "${{ steps.create_release.outputs.upload_url }}/assets?name=$(basename ${wheel})"
-          done
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # Provided by the create_release step
+          asset_path: ./wheelhouse/*.whl
+          asset_name: racplusplus-${{ steps.get_version.outputs.VERSION }}.whl
+          asset_content_type: application/zip
