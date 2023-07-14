@@ -89,11 +89,11 @@ pybind11_add_module(${python_module_name} MODULE
     )
 
 #-----------------------------------Link Libraries-------------------------------------
-# target_link_libraries(${python_module_name} PRIVATE
-#     -L${PYTHON311_LIBRARIES}
-#     ${pybind11_LIBRARIES}
-#     c++
-#     Eigen3::Eigen)
+target_link_libraries(${python_module_name} PRIVATE
+    -L${PYTHON311_LIBRARIES}
+    ${pybind11_LIBRARIES}
+    c++
+    Eigen3::Eigen)
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py
