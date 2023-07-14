@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(racplusplus VERSION "0.0.5")
 
+message(STATUS "CC: $ENV{CC}")
+message(STATUS "CXX: $ENV{CXX}")
+
 # Set the OpenMP flags here
 if(DEFINED ENV{OpenMP_LIBRARY})
     message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
@@ -32,8 +35,6 @@ link_directories(${Python3_LIBRARY_DIRS})
 # Set compilers
 message(STATUS "\n-- Setting C and C++ Compilers to llvm...\n")
 # print cc and cxx env variables
-message(STATUS "CC: $ENV{CC}")
-message(STATUS "CXX: $ENV{CXX}")
 
 set(CMAKE_CXX_COMPILER "$ENV{CXX}")
 set(ENV{CPPFLAGS} "-I${LOCAL_INCLUDE_DIRS}")
@@ -58,9 +59,7 @@ if (MSVC)
 
   # Print out the CMAKE_PREFIX_PATH
   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
-
 set(CMAKE_CXX_STANDARD 17)
 
 #-------------------required packages-------------------------

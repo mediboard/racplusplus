@@ -49,6 +49,13 @@ jobs:
         run: echo "PYTHON_PATH=$(where python)" >> $GITHUB_ENV
         shell: pwsh
       
+      - name: Set compiler for windows
+        if: runner.os == 'Windows'
+        run: |
+          echo "CC=$(where gcc)" >> $GITHUB_ENV
+          echo "CXX=$(where g++)" >> $GITHUB_ENV
+        shell: pwsh
+      
       - name: Print PYTHON_PATH
         if: runner.os == 'Windows'
         run: echo $PYTHON_PATH
