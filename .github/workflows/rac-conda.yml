@@ -98,7 +98,7 @@ jobs:
       - name: Install linux wheels
         run: |
           PLATFORM=$(uname -m)
-          PYTHON_VERSION=$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)
+          PYTHON_VERSION=11
           WHEEL_FILE=$(ls dist/racplusplus*cp${PYTHON_VERSION//.}*manylinux*${PLATFORM}.whl)
           echo "Installing ${WHEEL_FILE}"
           pip install "${WHEEL_FILE}"
