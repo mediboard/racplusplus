@@ -29,10 +29,10 @@ jobs:
         if: runner.os == 'macOS'
         run: chmod +x ./dependencies_mac.sh
 
-      - name: Run Windows dependencies script
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: .\dependencies_windows.ps1
+      # - name: Run Windows dependencies script
+      #   if: runner.os == 'Windows'
+      #   shell: powershell
+      #   run: .\dependencies_windows.ps1
 
       - name: Install build dependencies
         run: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: Set Python path for windows
         if: runner.os == 'Windows'
-        run: echo "PYTHON_PATH=$(Get-Command python | Select-Object -ExpandProperty Source)" >> $GITHUB_ENV
+        run: echo "PYTHON_PATH=$(where python)" >> $GITHUB_ENV
         shell: pwsh
 
       - name: Set mac environment variables 
