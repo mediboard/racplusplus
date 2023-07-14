@@ -1,6 +1,6 @@
 [project]
 name = "racplusplus"
-version = "0.0.5"
+version = "0.0.6"
 description = "Reciprocal Agglomerative Clustering, optimized for speed/ parallelization in C++."
 authors = [
     {name = "Porter Hunley", email = "porterhunley@themedicalboard.net"},
