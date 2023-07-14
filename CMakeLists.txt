@@ -50,8 +50,8 @@ if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
   set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
-  message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-  message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
+  # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
+  # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
 
   execute_process(
     COMMAND "${Python3_EXECUTABLE} -m pip show -f pybind11"
@@ -63,6 +63,9 @@ if (MSVC)
 
   # Append the pybind11 directory to CMAKE_PREFIX_PATH
   list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_LOCATION}/pybind11)
+
+  # Print out the CMAKE_PREFIX_PATH
+  message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 endif()
 
 #-------------------required packages-------------------------
