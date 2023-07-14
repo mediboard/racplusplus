@@ -58,6 +58,7 @@ if (MSVC)
   list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
   # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /02 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
   add_compile_options(/O2 /W4 /EHsc)
+  add_compile_options(/std:c++17)
 
   # Print out the CMAKE_PREFIX_PATH
   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
