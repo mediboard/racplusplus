@@ -109,7 +109,7 @@ jobs:
           pytest
 
   upload_to_pypi:
-    needs: build_wheels
+    needs: [build_wheels, test_linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
