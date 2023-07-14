@@ -50,6 +50,7 @@ if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
   set(Python3_EXECUTABLE $ENV{PYTHON_PATH})
+  message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
 
   execute_process(
 
