@@ -1,15 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
-# set(CMAKE_CXX_STANDARD 17)
 project(racplusplus VERSION "0.0.5")
 message(STATUS "CC: $ENV{CC}")
 message(STATUS "CXX: $ENV{CXX}")
 
 # Set the OpenMP flags here
 if(DEFINED ENV{OpenMP_LIBRARY})
-    message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lomp")
-    include_directories("/usr/local/include")
+  message(STATUS "OpenMP_LIBRARY = $ENV{OpenMP_LIBRARY}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lomp")
+  include_directories("/usr/local/include")
 endif()
 
 
@@ -44,32 +43,26 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
 
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
-  # set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
-  # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
-  # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-  # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
 
   # Append the pybind11 directory to CMAKE_PREFIX_PATH
   list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
-  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /02 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
   add_compile_options(/O2 /W4 /EHsc)
-  # add_compile_options(/Za)
   add_compile_options(/std:c++latest)
 
-  # Print out the CMAKE_PREFIX_PATH
-  message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+else()
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
 find_package(pybind11 REQUIRED)
-
 find_package(Eigen3 REQUIRED)
 #-------------------------------------------------------------
 
@@ -89,15 +82,18 @@ pybind11_add_module(${python_module_name} MODULE
     )
 
 #-----------------------------------Link Libraries-------------------------------------
-target_link_libraries(${python_module_name} PRIVATE
-    -L${PYTHON311_LIBRARIES}
-    ${pybind11_LIBRARIES}
-    Eigen3::Eigen)
-# target_link_libraries(${python_module_name} PRIVATE
-#     -L${PYTHON311_LIBRARIES}
-#     ${pybind11_LIBRARIES}
-#     c++
-#     Eigen3::Eigen)
+if (MSVC)
+  target_link_libraries(${python_module_name} PRIVATE
+      -L${PYTHON311_LIBRARIES}
+      ${pybind11_LIBRARIES}
+      Eigen3::Eigen)
+else()
+  target_link_libraries(${python_module_name} PRIVATE
+      -L${PYTHON311_LIBRARIES}
+      ${pybind11_LIBRARIES}
+      c++
+      Eigen3::Eigen)
+endif()
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py

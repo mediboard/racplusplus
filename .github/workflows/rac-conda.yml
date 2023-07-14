@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -49,12 +49,6 @@ jobs:
         run: echo "PYTHON_PATH=$(where python)" >> $GITHUB_ENV
         shell: pwsh
       
-      # - name: Set CC and CXX environment variables
-      #   run: |
-      #     echo "CC=$(which gcc)" >> $GITHUB_ENV
-      #     echo "CXX=$(which g++)" >> $GITHUB_ENV
-      #   shell: bash
-
       - name: Print PYTHON_PATH
         if: runner.os == 'Windows'
         run: echo $PYTHON_PATH
@@ -73,4 +67,3 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
-
