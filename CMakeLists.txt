@@ -48,7 +48,7 @@ message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker 
 
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
-  # add_compile_options(/openmp)
+  add_compile_options(/openmp)
   # set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
   # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
@@ -57,7 +57,9 @@ if (MSVC)
   # Append the pybind11 directory to CMAKE_PREFIX_PATH
   list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
   # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /02 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
-  # add_compile_options(/O2 /W4 /EHsc)
+  add_compile_options(/O2 /W4 /EHsc)
+  add_compile_options(/Za)
+  add_compile_options(/std:c++latest)
 
   # Print out the CMAKE_PREFIX_PATH
   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
@@ -68,7 +70,7 @@ find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
 find_package(pybind11 REQUIRED)
 
-# find_package(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 #-------------------------------------------------------------
 
 #-------------------------------------Include Directories----------------------------
@@ -87,11 +89,6 @@ pybind11_add_module(${python_module_name} MODULE
     )
 
 #-----------------------------------Link Libraries-------------------------------------
-target_link_libraries(${python_module_name} PRIVATE
-    -L${PYTHON311_LIBRARIES}
-    ${pybind11_LIBRARIES}
-    c++)
-
 # target_link_libraries(${python_module_name} PRIVATE
 #     -L${PYTHON311_LIBRARIES}
 #     ${pybind11_LIBRARIES}
