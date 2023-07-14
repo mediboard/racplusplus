@@ -68,7 +68,11 @@ jobs:
         with:
           name: wheelhouse
           path: ./wheelhouse/*.whl
-      
+
+  upload_to_pypi:
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    steps:
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::$(grep version pyproject.toml | head -n 1 | sed 's/version = "\(.*\)"/\1/')
