@@ -49,12 +49,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -f
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
-  set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
+  # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
 
   execute_process(
-    COMMAND "${Python3_EXECUTABLE} -m pip show -f pybind11"
+    COMMAND "C:/hostedtoolcache/windows/Python/3.10.11/x64 -m pip show -f pybind11"
     COMMAND grep Location
     COMMAND awk "{print $2}"
     OUTPUT_VARIABLE PYBIND11_LOCATION
