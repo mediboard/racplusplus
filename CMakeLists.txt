@@ -68,7 +68,7 @@ find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
 find_package(pybind11 REQUIRED)
 
-# find_package(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 #-------------------------------------------------------------
 
 #-------------------------------------Include Directories----------------------------
@@ -86,17 +86,11 @@ pybind11_add_module(${python_module_name} MODULE
      src/racplusplus/_racplusplus.cpp
     )
 
-#-----------------------------------Link Libraries-------------------------------------
 target_link_libraries(${python_module_name} PRIVATE
     -L${PYTHON311_LIBRARIES}
     ${pybind11_LIBRARIES}
-    c++)
-
-# target_link_libraries(${python_module_name} PRIVATE
-#     -L${PYTHON311_LIBRARIES}
-#     ${pybind11_LIBRARIES}
-#     c++
-#     Eigen3::Eigen)
+    c++
+    Eigen3::Eigen)
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py
