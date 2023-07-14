@@ -1071,7 +1071,7 @@ void update_cluster_nn_dist(
             continue;
         }
 
-        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
+        if (cluster->will_merge || (cluster->nn != -1 && clusters[cluster->nn] != nullptr && clusters[cluster->nn]->will_merge)) {
             cluster->update_nn(distance_arr, max_merge_distance);
         }
     }
@@ -1084,7 +1084,7 @@ std::vector<Cluster*> get_unique_nn(std::vector<Cluster*>& clusters, std::vector
             continue;
         }
 
-        if (cluster->will_merge || (cluster->nn != -1 and clusters[cluster->nn] != nullptr and clusters[cluster->nn]->will_merge)) {
+        if (cluster->will_merge || (cluster->nn != -1 && clusters[cluster->nn] != nullptr && clusters[cluster->nn]->will_merge)) {
             if (nn_count[cluster->id] == 0) {
                 unique_nn.push_back(cluster);
                 nn_count[cluster->id]++;

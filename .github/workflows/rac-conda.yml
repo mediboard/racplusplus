@@ -49,11 +49,11 @@ jobs:
         run: echo "PYTHON_PATH=$(where python)" >> $GITHUB_ENV
         shell: pwsh
       
-      - name: Set CC and CXX environment variables
-        run: |
-          echo "CC=$(which gcc)" >> $GITHUB_ENV
-          echo "CXX=$(which g++)" >> $GITHUB_ENV
-        shell: bash
+      # - name: Set CC and CXX environment variables
+      #   run: |
+      #     echo "CC=$(which gcc)" >> $GITHUB_ENV
+      #     echo "CXX=$(which g++)" >> $GITHUB_ENV
+      #   shell: bash
 
       - name: Print PYTHON_PATH
         if: runner.os == 'Windows'
