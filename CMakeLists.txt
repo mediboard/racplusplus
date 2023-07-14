@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 17)
 project(racplusplus VERSION "0.0.5")
-
 message(STATUS "CC: $ENV{CC}")
 message(STATUS "CXX: $ENV{CXX}")
 
@@ -45,22 +44,25 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 #Set Opt, Warning Flags, Linker
 message(STATUS "\n-- Setting C++ Warning and Optimization Flags, Setting Linker to lld...\n")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
 
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
-#   # add_compile_options(/openmp)
-#   set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
-#   # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
-#   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-#   # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
+  add_compile_options(/openmp)
+  # set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
+  # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
+  # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
+  # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
 
-#   # Append the pybind11 directory to CMAKE_PREFIX_PATH
+  # Append the pybind11 directory to CMAKE_PREFIX_PATH
   list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /02 -Wsign-compare -Wunreachable-code -fwrapv -Wall")
+  add_compile_options(/O2 /W4 /EHsc)
 
-#   # Print out the CMAKE_PREFIX_PATH
-#   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+  # Print out the CMAKE_PREFIX_PATH
+  message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 endif()
+
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
