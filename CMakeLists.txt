@@ -11,17 +11,6 @@ if(DEFINED ENV{OpenMP_LIBRARY})
   include_directories("/usr/local/include")
 endif()
 
-
-# message(STATUS "\n-- Finding Prefix Paths...\n")
-# list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt")
-# if(DEFINED ENV{CONDA_PREFIX})
-#     set(CONDA_PREFIX $ENV{CONDA_PREFIX})
-#     message(STATUS "Loaded environment variable: CONDA_PREFIX=${CONDA_PREFIX}")
-# else()
-#     message(STATUS "Environment variable CONDA_PREFIX is not set.")
-# endif()
-# list(APPEND CMAKE_PREFIX_PATH ${CONDA_PREFIX})
-
 # Set Python3.11 directories
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 list(APPEND CMAKE_PREFIX_PATH ${Python_SITEARCH})
