@@ -73,6 +73,13 @@ jobs:
     needs: build_wheels
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::$(grep version pyproject.toml | head -n 1 | sed 's/version = "\(.*\)"/\1/')
