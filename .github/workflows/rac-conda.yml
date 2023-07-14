@@ -48,6 +48,11 @@ jobs:
         if: runner.os == 'Windows'
         run: echo "PYTHON_PATH=$(where python)" >> $GITHUB_ENV
         shell: pwsh
+      
+      - name: Print PYTHON_PATH
+        if: runner.os == 'Windows'
+        run: echo $PYTHON_PATH
+        shell: pwsh
 
       - name: Set mac environment variables 
         if: runner.os == 'macOS'
