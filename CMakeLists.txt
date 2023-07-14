@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_CXX_STANDARD 17)
 project(racplusplus VERSION "0.0.5")
 
 # Set the OpenMP flags here
@@ -48,7 +47,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -f
 
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
-  add_compile_options(/openmp)
+  # add_compile_options(/openmp)
   set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
   # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
@@ -60,6 +59,8 @@ if (MSVC)
   # Print out the CMAKE_PREFIX_PATH
   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 endif()
+
+set(CMAKE_CXX_STANDARD 17)
 
 #-------------------required packages-------------------------
 find_package(Python3 REQUIRED Development.Module)
