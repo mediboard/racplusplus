@@ -49,17 +49,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wsign-compare -Wunreachable-code -f
 if (MSVC)
   message(STATUS "MSVC detected, setting flags...")
   add_compile_options(/openmp)
+  set(CMAKE_CXX_COMPILER "C:/ProgramData/Chocolatey/bin/g++.exe")
   # set(Python3_EXECUTABLE "C:/hostedtoolcache/windows/Python/3.10.11/x64")
   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
-
-  # execute_process(
-  #   COMMAND "C:/hostedtoolcache/windows/Python/3.10.11/x64 -m pip show -f pybind11"
-  #   COMMAND grep Location
-  #   COMMAND awk "{print $2}"
-  #   OUTPUT_VARIABLE PYBIND11_LOCATION
-  #   OUTPUT_STRIP_TRAILING_WHITESPACE
-  # )
 
   # Append the pybind11 directory to CMAKE_PREFIX_PATH
   list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
@@ -73,7 +66,7 @@ find_package(Python3 REQUIRED Development.Module)
 find_package(Python3 REQUIRED Interpreter)
 find_package(pybind11 REQUIRED)
 
-find_package(Eigen3 REQUIRED)
+# find_package(Eigen3 REQUIRED)
 #-------------------------------------------------------------
 
 #-------------------------------------Include Directories----------------------------
@@ -95,8 +88,13 @@ pybind11_add_module(${python_module_name} MODULE
 target_link_libraries(${python_module_name} PRIVATE
     -L${PYTHON311_LIBRARIES}
     ${pybind11_LIBRARIES}
-    c++
-    Eigen3::Eigen)
+    c++)
+
+# target_link_libraries(${python_module_name} PRIVATE
+#     -L${PYTHON311_LIBRARIES}
+#     ${pybind11_LIBRARIES}
+#     c++
+#     Eigen3::Eigen)
 #----------------------------------------------------------------------------------------
 
 #Install the Cmake Target in src directory specified in setup.py

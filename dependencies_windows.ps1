@@ -4,30 +4,30 @@ $ErrorActionPreference = "Stop"
 $env:CC = (Get-Command gcc).Source
 $env:CXX = (Get-Command g++).Source
 
-# Download and unzip Eigen if it does not exist
-if(-Not (Test-Path -Path "eigen-3.4.0")) {
-    Invoke-WebRequest -Uri "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip" -OutFile "eigen-3.4.0.zip"
-    Expand-Archive -Path "eigen-3.4.0.zip" -DestinationPath "."
-} else {
-    Write-Output "Eigen already exists, skipping download."
-}
+# # Download and unzip Eigen if it does not exist
+# if(-Not (Test-Path -Path "eigen-3.4.0")) {
+#     Invoke-WebRequest -Uri "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip" -OutFile "eigen-3.4.0.zip"
+#     Expand-Archive -Path "eigen-3.4.0.zip" -DestinationPath "."
+# } else {
+#     Write-Output "Eigen already exists, skipping download."
+# }
 
-$EIGEN_BUILD_DIR = "eigen-3.4.0\build"
+# $EIGEN_BUILD_DIR = "eigen-3.4.0\build"
 
-if(Test-Path -Path $EIGEN_BUILD_DIR) {
-    Write-Output "Directory $EIGEN_BUILD_DIR exists. Removing..."
-    Remove-Item -Recurse -Force $EIGEN_BUILD_DIR
-}
+# if(Test-Path -Path $EIGEN_BUILD_DIR) {
+#     Write-Output "Directory $EIGEN_BUILD_DIR exists. Removing..."
+#     Remove-Item -Recurse -Force $EIGEN_BUILD_DIR
+# }
 
-# Create build directory
-New-Item -ItemType Directory -Force -Path $EIGEN_BUILD_DIR 
-Set-Location $EIGEN_BUILD_DIR 
+# # Create build directory
+# New-Item -ItemType Directory -Force -Path $EIGEN_BUILD_DIR 
+# Set-Location $EIGEN_BUILD_DIR 
 
-# Configure
-cmake -DCMAKE_C_COMPILER=$env:CC -DCMAKE_CXX_COMPILER=$env:CXX ..
+# # Configure
+# cmake -DCMAKE_C_COMPILER=$env:CC -DCMAKE_CXX_COMPILER=$env:CXX ..
 
-# Install
-make install
+# # Install
+# make install
 
 # Get the Python interpreter path
 $PYTHON_PATH = (Get-Command python).Source
