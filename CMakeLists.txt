@@ -53,16 +53,16 @@ if (MSVC)
   # message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   # message(STATUS "PYTHON_PATH: $ENV{PYTHON_PATH}")
 
-  execute_process(
-    COMMAND "C:/hostedtoolcache/windows/Python/3.10.11/x64 -m pip show -f pybind11"
-    COMMAND grep Location
-    COMMAND awk "{print $2}"
-    OUTPUT_VARIABLE PYBIND11_LOCATION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  # execute_process(
+  #   COMMAND "C:/hostedtoolcache/windows/Python/3.10.11/x64 -m pip show -f pybind11"
+  #   COMMAND grep Location
+  #   COMMAND awk "{print $2}"
+  #   OUTPUT_VARIABLE PYBIND11_LOCATION
+  #   OUTPUT_STRIP_TRAILING_WHITESPACE
+  # )
 
   # Append the pybind11 directory to CMAKE_PREFIX_PATH
-  list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_LOCATION}/pybind11)
+  list(APPEND CMAKE_PREFIX_PATH "c:/hostedtoolcache/windows/python/3.10.11/x64/lib/site-packages/pybind11")
 
   # Print out the CMAKE_PREFIX_PATH
   message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
