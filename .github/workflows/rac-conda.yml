@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.8'
 
       - name: Make linux script executable
         if: runner.os == 'Linux'
@@ -63,6 +63,8 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_SKIP: "pp*"
 
       - uses: actions/upload-artifact@v2
         with:
@@ -79,7 +81,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.8'
 
       - name: Install dependencies
         run: |
