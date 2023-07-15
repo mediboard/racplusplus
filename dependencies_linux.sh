@@ -3,21 +3,30 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Download Eigen
-curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
+# Directory where Eigen should be installed
+EIGEN_DIR=/usr/local/include/eigen3
 
-# Unzip Eigen
-unzip eigen-3.4.0.zip
+# Check if Eigen is already installed
+if [ ! -d "$EIGEN_DIR" ]; then
+  # Download Eigen
+  curl -OL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 
-# Create build directory
-mkdir eigen-3.4.0/build
-cd eigen-3.4.0/build
+  # Unzip Eigen
+  unzip eigen-3.4.0.zip
 
-# Configure
-cmake ..
+  # Create build directory
+  mkdir eigen-3.4.0/build
+  cd eigen-3.4.0/build
 
-# Install
-make install
+  # Configure
+  cmake ..
+
+  # Install
+  make install
+else
+  echo "Eigen is already installed at $EIGEN_DIR."
+fi
+
 
 # Get the Python interpreter path
 PYTHON_PATH=$(which python)
